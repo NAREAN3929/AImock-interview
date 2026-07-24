@@ -299,11 +299,17 @@ export const P2PMockRoom: React.FC = () => {
             </div>
           </div>
 
-          {/* WebRTC Video Feeds Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* WebRTC Video Feeds Grid (Split 50/50 Screen in Fullscreen Mode) */}
+          <div className={
+            isFullscreen 
+              ? "flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 w-full items-stretch my-2 overflow-hidden" 
+              : "grid grid-cols-1 md:grid-cols-2 gap-6"
+          }>
             
             {/* User Camera Feed */}
-            <div className="relative h-64 bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden flex flex-col justify-between p-4 shadow-xl">
+            <div className={`relative bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden flex flex-col justify-between p-4 shadow-xl ${
+              isFullscreen ? 'h-full min-h-[300px]' : 'h-64'
+            }`}>
               {/* Live Webcam Stream Video Element */}
               <video
                 ref={localVideoRef}
@@ -335,45 +341,49 @@ export const P2PMockRoom: React.FC = () => {
                 </div>
               )}
 
-              {/* Controls Toolbar */}
-              <div className="flex items-center justify-center gap-3 z-10 backdrop-blur-sm bg-slate-950/40 py-2 rounded-2xl border border-slate-800/50">
-                <button
-                  type="button"
-                  onClick={() => setIsMicOn(!isMicOn)}
-                  className={`p-2.5 rounded-xl transition-all ${
-                    isMicOn ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-500'
-                  }`}
-                  title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
-                >
-                  {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsVideoOn(!isVideoOn)}
-                  className={`p-2.5 rounded-xl transition-all ${
-                    isVideoOn ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-500'
-                  }`}
-                  title={isVideoOn ? "Turn Off Camera" : "Turn On Camera"}
-                >
-                  {isVideoOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
-                </button>
-              </div>
+              {/* Controls Toolbar (Only shown in normal non-fullscreen mode) */}
+              {!isFullscreen && (
+                <div className="flex items-center justify-center gap-3 z-10 backdrop-blur-sm bg-slate-950/40 py-2 rounded-2xl border border-slate-800/50">
+                  <button
+                    type="button"
+                    onClick={() => setIsMicOn(!isMicOn)}
+                    className={`p-2.5 rounded-xl transition-all ${
+                      isMicOn ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-500'
+                    }`}
+                    title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
+                  >
+                    {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoOn(!isVideoOn)}
+                    className={`p-2.5 rounded-xl transition-all ${
+                      isVideoOn ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-rose-600 text-white hover:bg-rose-500'
+                    }`}
+                    title={isVideoOn ? "Turn Off Camera" : "Turn On Camera"}
+                  >
+                    {isVideoOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Peer Candidate Feed */}
-            <div className="relative h-64 bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden flex flex-col justify-between p-4 shadow-xl">
+            <div className={`relative bg-slate-950 rounded-3xl border border-slate-800 overflow-hidden flex flex-col justify-between p-4 shadow-xl ${
+              isFullscreen ? 'h-full min-h-[300px]' : 'h-64'
+            }`}>
               <div className="flex items-center justify-between z-10">
-                <span className="px-3 py-1 rounded-full bg-slate-900/80 text-white text-xs font-mono font-bold backdrop-blur-md">
+                <span className="px-3 py-1 rounded-full bg-slate-900/80 text-white text-xs font-mono font-bold backdrop-blur-md border border-slate-800">
                   Peer Candidate (Online)
                 </span>
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
               </div>
 
               <div className="text-center space-y-1 my-auto">
-                <div className="w-16 h-16 rounded-full bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center mx-auto text-cyan-300 font-bold text-xl">
+                <div className="w-20 h-20 rounded-full bg-cyan-600/30 border border-cyan-500/50 flex items-center justify-center mx-auto text-cyan-300 font-bold text-2xl shadow-lg">
                   PEER
                 </div>
-                <span className="text-xs text-slate-400 font-mono">Peer Connected • Audio Stream 100%</span>
+                <span className="text-xs text-slate-400 font-mono block pt-2">Peer Connected • Audio Stream 100%</span>
               </div>
 
               <div className="flex items-center justify-center gap-2 z-10">
@@ -383,8 +393,9 @@ export const P2PMockRoom: React.FC = () => {
 
           </div>
 
-          {/* AI Rubric & Peer Evaluation Form */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+          {/* AI Rubric & Peer Evaluation Form (Hidden during Fullscreen for Clean 50/50 Video View) */}
+          {!isFullscreen && (
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
               <div>
                 <span className="text-xs font-mono text-violet-400 font-bold uppercase">AI Evaluation Co-Pilot</span>
@@ -454,6 +465,7 @@ export const P2PMockRoom: React.FC = () => {
               </button>
             </div>
           </div>
+          )}
 
           {/* Dedicated Full-Screen Floating Video & Room Controls Bar */}
           {isFullscreen && (
