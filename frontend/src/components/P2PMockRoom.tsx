@@ -11,6 +11,7 @@ export const P2PMockRoom: React.FC = () => {
   const [isMicOn, setIsMicOn] = useState(true);
   const [isVideoOn, setIsVideoOn] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showAiRecs, setShowAiRecs] = useState(true);
   const [mediaError, setMediaError] = useState<string | null>(null);
 
   // WebRTC Media Stream Refs
@@ -27,6 +28,7 @@ export const P2PMockRoom: React.FC = () => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
+        setShowAiRecs(false); // Hide AI recommendation during fullscreen
       }).catch(err => {
         console.warn("Fullscreen request error:", err);
       });
@@ -34,6 +36,7 @@ export const P2PMockRoom: React.FC = () => {
       if (document.exitFullscreen) {
         document.exitFullscreen().then(() => {
           setIsFullscreen(false);
+          setShowAiRecs(true);
         });
       }
     }
@@ -42,7 +45,11 @@ export const P2PMockRoom: React.FC = () => {
   // Sync state with native browser ESC key or fullscreenchange event
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const isFS = !!document.fullscreenElement;
+      setIsFullscreen(isFS);
+      if (isFS) {
+        setShowAiRecs(false); // Automatically hide AI recommendation during fullscreen
+      }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => {
@@ -250,6 +257,19 @@ export const P2PMockRoom: React.FC = () => {
 
             <div className="flex items-center gap-3">
               <button
+                onClick={() => setShowAiRecs(!showAiRecs)}
+                className={`px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
+                  showAiRecs
+                    ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30'
+                    : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                }`}
+                title={showAiRecs ? "Hide AI Recommendations" : "Show AI Recommendations"}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <span>{showAiRecs ? 'AI Recs: Shown' : 'AI Recs: Hidden'}</span>
+              </button>
+
+              <button
                 onClick={toggleFullscreen}
                 className={`px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
                   isFullscreen
@@ -374,12 +394,19 @@ export const P2PMockRoom: React.FC = () => {
             </div>
 
             <div className="space-y-4">
-              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2">
-                <span className="text-xs font-mono text-cyan-400 font-bold block">AI RECOMMENDED QUESTION FOR CANDIDATE:</span>
-                <p className="text-xs font-semibold text-slate-200 leading-relaxed">
-                  "Explain how Hash Maps handle collision resolution (Chaining vs Open Addressing). What is the worst-case time complexity if all keys hash to the same index?"
-                </p>
-              </div>
+              {showAiRecs && (
+                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-cyan-400 font-bold block">AI RECOMMENDED QUESTION FOR CANDIDATE:</span>
+                    <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                      Co-Pilot Hint
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-slate-200 leading-relaxed">
+                    "Explain how Hash Maps handle collision resolution (Chaining vs Open Addressing). What is the worst-case time complexity if all keys hash to the same index?"
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <label className="block text-xs font-mono font-bold text-slate-300">Rate Peer Performance (1 to 5 Stars):</label>
@@ -456,6 +483,20 @@ export const P2PMockRoom: React.FC = () => {
               </button>
 
               <div className="h-6 w-[1px] bg-slate-700 mx-1 hidden sm:block" />
+
+              <button
+                type="button"
+                onClick={() => setShowAiRecs(!showAiRecs)}
+                className={`px-4 py-2.5 rounded-full border text-xs font-mono font-bold flex items-center gap-2 transition-all ${
+                  showAiRecs
+                    ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30'
+                    : 'bg-slate-800 border-slate-700 text-slate-400 hover:bg-slate-700'
+                }`}
+                title={showAiRecs ? "Hide AI Recommendation" : "Show AI Recommendation"}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden sm:inline">{showAiRecs ? 'AI Recs: Visible' : 'AI Recs: Hidden'}</span>
+              </button>
 
               <button
                 onClick={() => setUserRole(r => r === 'interviewer' ? 'candidate' : 'interviewer')}

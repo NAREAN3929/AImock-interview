@@ -22,7 +22,8 @@ import {
   Lightbulb,
   HelpCircle,
   ShieldAlert,
-  Minimize2
+  Minimize2,
+  Maximize2
 } from 'lucide-react';
 
 export const LiveInterview: React.FC = () => {
@@ -55,6 +56,37 @@ export const LiveInterview: React.FC = () => {
   const [evaluating, setEvaluating] = useState(false);
   const [questionTimer, setQuestionTimer] = useState(0);
   const [showHint, setShowHint] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Sync state with native browser ESC key or fullscreenchange event
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFS = !!document.fullscreenElement;
+      setIsFullscreen(isFS);
+      if (isFS) {
+        setShowHint(false); // Automatically hide AI hint guide during full screen mode
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        setShowHint(false);
+      }).catch(err => console.warn('Fullscreen request bypassed', err));
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+        }).catch(err => console.warn(err));
+      }
+    }
+  };
 
   // Tab Switch Restriction Warning State
   const [tabSwitchWarning, setTabSwitchWarning] = useState(false);
@@ -232,6 +264,19 @@ export const LiveInterview: React.FC = () => {
 
         <div className="flex items-center gap-4">
           <button
+            onClick={toggleFullscreen}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition-colors ${
+              isFullscreen
+                ? 'bg-amber-500/20 border-amber-500/40 text-amber-300'
+                : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
+            }`}
+            title={isFullscreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+          >
+            {isFullscreen ? <Minimize2 className="w-4 h-4 text-amber-400" /> : <Maximize2 className="w-4 h-4 text-cyan-400" />}
+            <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+          </button>
+
+          <button
             onClick={() => setShowHint(!showHint)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-xs font-semibold transition-colors"
           >
@@ -257,7 +302,7 @@ export const LiveInterview: React.FC = () => {
       </div>
 
       {/* AI Hint Drawer Overlay */}
-      {showHint && (
+      {showHint && !isFullscreen && (
         <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs font-medium space-y-1 animate-fade-in">
           <div className="flex items-center gap-1.5 font-bold text-amber-300 text-sm">
             <Lightbulb className="w-4 h-4" />
@@ -297,7 +342,7 @@ export const LiveInterview: React.FC = () => {
               "{currentQuestion?.question_text}"
             </p>
 
-            {currentQuestion?.expected_keywords && (
+            {currentQuestion?.expected_keywords && !isFullscreen && (
               <div className="pt-2 border-t border-slate-800/80">
                 <span className="text-[10px] font-mono text-slate-500 block mb-1.5">KEY EXPECTED CONCEPTS</span>
                 <div className="flex flex-wrap gap-1.5">
