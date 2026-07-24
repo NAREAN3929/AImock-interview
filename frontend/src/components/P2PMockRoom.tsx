@@ -227,7 +227,11 @@ export const P2PMockRoom: React.FC = () => {
         </div>
       ) : (
         /* LIVE P2P INTERVIEW ROOM INTERFACE */
-        <div className="space-y-6">
+        <div className={
+          isFullscreen 
+            ? "fixed inset-0 z-[100] bg-[#090d16] p-4 sm:p-6 overflow-y-auto w-screen h-screen flex flex-col space-y-6" 
+            : "space-y-6"
+        }>
           
           {/* Room Toolbar */}
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
@@ -423,6 +427,60 @@ export const P2PMockRoom: React.FC = () => {
               </button>
             </div>
           </div>
+
+          {/* Dedicated Full-Screen Floating Video & Room Controls Bar */}
+          {isFullscreen && (
+            <div className="sticky bottom-4 z-50 mx-auto px-6 py-3 rounded-full bg-slate-900/90 border border-slate-700/80 shadow-2xl backdrop-blur-xl flex items-center justify-center gap-3 sm:gap-4 transition-all">
+              <button
+                type="button"
+                onClick={() => setIsMicOn(!isMicOn)}
+                className={`p-3 rounded-full transition-all flex items-center gap-2 text-xs font-bold ${
+                  isMicOn ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-rose-600 text-white hover:bg-rose-500 shadow-lg shadow-rose-600/30'
+                }`}
+                title={isMicOn ? "Mute Microphone" : "Unmute Microphone"}
+              >
+                {isMicOn ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isMicOn ? 'Mute Mic' : 'Unmute Mic'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsVideoOn(!isVideoOn)}
+                className={`p-3 rounded-full transition-all flex items-center gap-2 text-xs font-bold ${
+                  isVideoOn ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-rose-600 text-white hover:bg-rose-500 shadow-lg shadow-rose-600/30'
+                }`}
+                title={isVideoOn ? "Turn Off Camera" : "Turn On Camera"}
+              >
+                {isVideoOn ? <Video className="w-4 h-4" /> : <VideoOff className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isVideoOn ? 'Camera Off' : 'Camera On'}</span>
+              </button>
+
+              <div className="h-6 w-[1px] bg-slate-700 mx-1 hidden sm:block" />
+
+              <button
+                onClick={() => setUserRole(r => r === 'interviewer' ? 'candidate' : 'interviewer')}
+                className="px-4 py-2.5 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-mono font-bold flex items-center gap-2 border border-slate-700"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Swap Roles</span>
+              </button>
+
+              <button
+                onClick={toggleFullscreen}
+                className="px-4 py-2.5 rounded-full bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-mono font-bold flex items-center gap-2"
+              >
+                <Minimize2 className="w-3.5 h-3.5 text-amber-400" />
+                <span>Exit Full Screen</span>
+              </button>
+
+              <button
+                onClick={() => setJoinedRoom(false)}
+                className="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-transform"
+              >
+                End / Leave Room
+              </button>
+            </div>
+          )}
 
         </div>
       )}
