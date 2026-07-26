@@ -1,0 +1,56 @@
+# render.yaml — Render.com Deployment Configuration
+# This file lets Render auto-detect and deploy both backend and frontend services.
+# Docs: https://render.com/docs/render-yaml
+
+services:
+
+  # ─── Backend: FastAPI (Python) ──────────────────────────────────────────────
+  - type: web
+    name: aimock-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false          # You enter this manually in Render dashboard
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a secure random value
+      - key: MYSQL_USER
+        sync: false
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_HOST
+        sync: false
+      - key: MYSQL_PORT
+        value: "3306"
+      - key: MYSQL_DB
+        value: ai_mock_interview
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SENDER_EMAIL
+        sync: false
+    healthCheckPath: /
+
+  # ─── Frontend: React/Vite (Static Site) ────────────────────────────────────
+  - type: web
+    name: aimock-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        # After deploying backend, replace with your actual Render backend URL:
+        # e.g. https://aimock-backend.onrender.com/api/v1
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
