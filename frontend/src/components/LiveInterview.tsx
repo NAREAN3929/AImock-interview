@@ -139,6 +139,9 @@ export const LiveInterview: React.FC = () => {
       (listening) => {
         setIsRecording(listening);
         setAvatarStatus(listening ? 'listening' : 'idle');
+      },
+      (errText) => {
+        console.warn('Voice recognition error:', errText);
       }
     );
     recognizerRef.current = rec;
@@ -148,14 +151,14 @@ export const LiveInterview: React.FC = () => {
     };
   }, []);
 
-  const toggleMic = () => {
+  const toggleMic = async () => {
     if (!recognizerRef.current) return;
     if (isRecording) {
       recognizerRef.current.stop();
     } else {
       stopSpeaking();
       setUserText('');
-      recognizerRef.current.start();
+      await recognizerRef.current.start();
     }
   };
 

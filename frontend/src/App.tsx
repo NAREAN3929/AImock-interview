@@ -17,7 +17,6 @@ import { CompanyCheatSheets } from './components/CompanyCheatSheets';
 import { HistoryAnalytics } from './components/HistoryAnalytics';
 import { UserProfileView } from './components/UserProfile';
 import { CompanyOASimulator } from './components/CompanyOASimulator';
-import { SystemDesignCanvas } from './components/SystemDesignCanvas';
 import { PlacementTPODashboard } from './components/PlacementTPODashboard';
 import { P2PMockRoom } from './components/P2PMockRoom';
 import { AdminPanel } from './components/AdminPanel';
@@ -74,7 +73,6 @@ export const App: React.FC = () => {
               {activeTab === 'aptitude' && <AptitudeTrainer />}
               {activeTab === 'p2p-room' && <P2PMockRoom />}
               {activeTab === 'company-oa' && <CompanyOASimulator />}
-              {activeTab === 'system-canvas' && <SystemDesignCanvas />}
               {activeTab === 'tpo-portal' && <PlacementTPODashboard />}
               {activeTab === 'salary-negotiation' && <SalaryNegotiation />}
               {activeTab === 'company-cheatsheets' && <CompanyCheatSheets />}

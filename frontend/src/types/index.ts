@@ -10,7 +10,6 @@ export type NavTab =
   | 'communication'
   | 'aptitude'
   | 'company-oa'
-  | 'system-canvas'
   | 'tpo-portal'
   | 'certificates'
   | 'p2p-room'
@@ -45,29 +44,6 @@ export interface ProctoringViolationLog {
   details: string;
 }
 
-export interface SystemDesignGraphNode {
-  id: string;
-  label: string;
-  type: 'load-balancer' | 'service' | 'database' | 'cache' | 'queue' | 'client';
-  x: number;
-  y: number;
-}
-
-export interface SystemDesignGraphEdge {
-  id: string;
-  from: string;
-  to: string;
-  label?: string;
-}
-
-export interface SystemDesignEvaluationResult {
-  scalabilityScore: number;
-  spofRisks: string[];
-  bottlenecks: string[];
-  strengths: string[];
-  recommendations: string[];
-  estimatedMonthlyCostUSD: string;
-}
 
 export interface UserProfile {
   id: number;

@@ -521,7 +521,7 @@ export const InterviewSetup: React.FC = () => {
                 You have reached your <strong>10 free AI mock practice interviews limit</strong> for this month on the <strong>Free Starter Plan</strong>.
               </p>
               <p className="p-3 bg-slate-950 rounded-xl border border-slate-800 text-slate-400 font-mono">
-                💡 <strong>Pro Unlimited Access:</strong> Upgrade your account to unlock unlimited 24/7 AI practice interviews, full system architecture canvas grading, and company OA cheatsheets.
+                💡 <strong>Pro Unlimited Access:</strong> Upgrade your account to unlock unlimited 24/7 AI practice interviews, detailed evaluation reports, and company OA cheatsheets.
               </p>
             </div>
 

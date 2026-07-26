@@ -96,60 +96,6 @@ class GeminiService:
         res["adaptive_followup_question"] = f"Can you elaborate further on how you would measure performance and handle edge cases?"
         return res
 
-    def evaluate_system_design_diagram(self, canvas_schema: Dict[str, Any]) -> Dict[str, Any]:
-        self._init_client()
-        prompt = f"""
-        You are a Principal System Architect auditing a System Design whiteboard diagram.
-        Diagram Nodes & Connections JSON:
-        {json.dumps(canvas_schema)}
-
-        Analyze the architecture for:
-        1. Single Point of Failure (SPOF) risks.
-        2. Performance bottlenecks & scalability constraints.
-        3. Scalability Score (0-100).
-        4. Strengths & recommended architectural improvements.
-        5. Estimated monthly infrastructure cost (USD).
-
-        Return ONLY a JSON object with format:
-        {{
-            "scalabilityScore": 86.5,
-            "spofRisks": ["Single primary database without read replicas or failover", "Uncached auth service endpoint"],
-            "bottlenecks": ["Monolithic API service handling both WebSocket and heavy compute"],
-            "strengths": ["Clear separation of CDN and object storage", "Load Balancer positioned at entrance"],
-            "recommendations": ["Introduce Redis caching cluster for session state", "Add message queue (Kafka/RabbitMQ) for async tasks"],
-            "estimatedMonthlyCostUSD": "$450 - $1,200 / month"
-        }}
-        """
-        if self.model:
-            try:
-                response = self.model.generate_content(prompt)
-                clean_json = self._extract_json(response.text)
-                return json.loads(clean_json)
-            except Exception as e:
-                logger.error(f"Gemini System Design Evaluation error: {e}")
-
-        return {
-            "scalabilityScore": 84.0,
-            "spofRisks": [
-                "Single primary database instance without automated multi-AZ failover",
-                "Lack of distributed cache layer in front of high-traffic queries"
-            ],
-            "bottlenecks": [
-                "Synchronous database queries during user authentication",
-                "Potential memory bottleneck on microservice worker node"
-            ],
-            "strengths": [
-                "Proper positioning of NGINX / Cloudflare Load Balancer at API gateway",
-                "Decoupled asset serving via object storage buckets"
-            ],
-            "recommendations": [
-                "Add Redis cluster for session caching and query result buffering",
-                "Implement RabbitMQ/Kafka queue for background processing",
-                "Configure DB read replicas with horizontal scaling"
-            ],
-            "estimatedMonthlyCostUSD": "$380 - $950 / month"
-        }
-
     def analyze_resume(self, resume_text: str, target_role: str) -> Dict[str, Any]:
         self._init_client()
         prompt = f"""

@@ -40,7 +40,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { id: 'p2p-room', label: 'Peer Mock Room', icon: <Users className="w-5 h-5 text-violet-400" /> },
     { id: 'company-oa', label: 'Company OA Simulators', icon: <Building2 className="w-5 h-5 text-pink-400" /> },
     { id: 'question-bank', label: 'Coding & Company Bank', icon: <BookOpen className="w-5 h-5 text-blue-400" /> },
-    { id: 'system-canvas', label: 'System Design Canvas', icon: <Crown className="w-5 h-5 text-cyan-400" /> },
     { id: 'aptitude', label: 'Aptitude Trainer', icon: <BrainCircuit className="w-5 h-5 text-amber-400" /> },
     { id: 'tpo-portal', label: 'Placement TPO Hub', icon: <Award className="w-5 h-5 text-emerald-400" /> },
     { id: 'communication', label: 'Communication Lab', icon: <MessageSquare className="w-5 h-5 text-cyan-400" /> },

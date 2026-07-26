@@ -129,12 +129,6 @@ def evaluate_answer(submit: QuestionAnswerSubmit, db: Session = Depends(get_db))
         "wpm": wpm
     }
 
-@router.post("/evaluate-system-design")
-def evaluate_system_design(payload: Dict[str, Any]):
-    canvas_data = payload.get("canvas_schema", {})
-    eval_result = gemini_service.evaluate_system_design_diagram(canvas_data)
-    return eval_result
-
 @router.post("/complete/{interview_id}")
 def complete_interview(interview_id: int, db: Session = Depends(get_db)):
     interview = db.query(Interview).filter(Interview.id == interview_id).first()

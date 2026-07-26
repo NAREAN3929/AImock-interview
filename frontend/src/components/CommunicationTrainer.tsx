@@ -21,6 +21,7 @@ export const CommunicationTrainer: React.FC = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [timer, setTimer] = useState(0);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const recognizerRef = useRef<VoiceRecognizer | null>(null);
 
@@ -35,20 +36,23 @@ export const CommunicationTrainer: React.FC = () => {
   useEffect(() => {
     const rec = new VoiceRecognizer(
       (text) => setTranscript(text),
-      (listening) => setIsRecording(listening)
+      (listening) => setIsRecording(listening),
+      (err) => setErrorMsg(err)
     );
     recognizerRef.current = rec;
     return () => rec.stop();
   }, []);
 
-  const toggleRecording = () => {
+  const toggleRecording = async () => {
     if (!recognizerRef.current) return;
+    setErrorMsg(null);
+
     if (isRecording) {
       recognizerRef.current.stop();
     } else {
       setTranscript('');
       setTimer(0);
-      recognizerRef.current.start();
+      await recognizerRef.current.start();
     }
   };
 
@@ -75,6 +79,22 @@ export const CommunicationTrainer: React.FC = () => {
       {/* Main Communication Practice Box */}
       <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
         
+        {errorMsg && (
+          <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl flex items-start gap-3 text-rose-300 text-xs font-medium">
+            <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <span className="font-bold text-rose-200 block mb-0.5">Microphone & Speech Notice</span>
+              <p>{errorMsg}</p>
+            </div>
+            <button 
+              onClick={() => setErrorMsg(null)}
+              className="text-rose-400 hover:text-rose-200 text-xs font-bold underline ml-2"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="space-y-0.5">
             <h3 className="text-base font-bold text-white">Live Voice Analysis Studio</h3>
