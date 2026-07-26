@@ -1,5 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Play, CheckCircle2, XCircle, AlertTriangle, Code2, Terminal, Check, Layers, FileCode } from 'lucide-react';
+import { executeCodeApi } from '../services/api';
+
 
 export interface TestCase {
   id: number;
@@ -74,147 +76,53 @@ function twoSum(nums, target) {
   };
 
   // Execute and evaluate code against test suite
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setIsRunning(true);
     setErrorDetails(null);
     setConsoleLogs([]);
 
-    setTimeout(() => {
-      setIsRunning(false);
-      
-      if (language === 'javascript') {
-        try {
-          const logs: string[] = [];
-          const customConsole = {
-            log: (...args: any[]) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
-          };
+    try {
+      // Call the real backend code execution API (local subprocess or Piston fallback)
+      const result = await executeCodeApi(language, code, '');
 
-          // Safely execute using Function constructor
-          const userFn = new Function('console', `${code}\n return typeof twoSum === 'function' ? twoSum : (typeof solve === 'function' ? solve : null);`);
-          const fn = userFn(customConsole);
+      const stdoutLines = result.stdout ? result.stdout.split('\n') : [];
+      const stderrLines = result.stderr ? result.stderr.split('\n').filter(Boolean) : [];
+      const logs: string[] = [
+        `[Engine: ${result.engine_used}]`,
+        `[Execution Time: ${result.execution_time_ms}ms]`,
+        ...stdoutLines,
+        ...stderrLines.map((l: string) => `⚠ ${l}`)
+      ];
 
-          if (!fn) {
-            throw new Error('Could not find entry point function (e.g. twoSum or solve)');
-          }
-
-          let allPassed = true;
-          const updatedSuite = testSuite.map((tc, idx) => {
-            let actualStr = '';
-            let passed = false;
-
-            try {
-              let result: any;
-              if (tc.input.includes('target =')) {
-                // Parse nums & target from input format e.g. "nums = [2,7,11,15], target = 9"
-                const parts = tc.input.split(',');
-                const numsMatch = tc.input.match(/nums\s*=\s*(\[[^\]]+\])/);
-                const targetMatch = tc.input.match(/target\s*=\s*(-?\d+)/);
-                
-                const numsArr = numsMatch ? JSON.parse(numsMatch[1]) : [2,7,11,15];
-                const targetNum = targetMatch ? parseInt(targetMatch[1], 10) : 9;
-                result = fn(numsArr, targetNum);
-              } else {
-                result = fn(tc.input);
-              }
-
-              actualStr = JSON.stringify(result);
-              passed = actualStr.replace(/ /g, '') === tc.expected.replace(/ /g, '');
-            } catch (err: any) {
-              actualStr = `RuntimeError: ${err.message}`;
-              passed = false;
-            }
-
-            if (!passed) allPassed = false;
-
-            return {
-              ...tc,
-              actual: actualStr,
-              passed,
-              runtime: `${Math.floor(Math.random() * 8) + 2}ms`
-            };
-          });
-
-          setTestSuite(updatedSuite);
-          setOverallPassed(allPassed);
-          setConsoleLogs(logs.length > 0 ? logs : ['Execution finished successfully.']);
-          setActiveTab('testcases');
-
-        } catch (err: any) {
-          // Parse stack trace for line number
-          let lineNum: number | null = null;
-          if (err.stack) {
-            const match = err.stack.match(/<anonymous>:(\d+):(\d+)/) || err.stack.match(/line (\d+)/i);
-            if (match) {
-              lineNum = parseInt(match[1], 10) - 1; // offset adjustment
-            }
-          }
-          
-          setErrorDetails({
-            line: lineNum && lineNum > 0 && lineNum <= lineCount ? lineNum : 4,
-            message: `${err.name || 'SyntaxError'}: ${err.message}`
-          });
-          setOverallPassed(false);
-          setActiveTab('console');
-        }
+      if (result.exit_code !== 0 || result.stderr) {
+        // Execution error - show in console
+        setErrorDetails({ line: null, message: result.stderr || 'Runtime error occurred.' });
+        setOverallPassed(false);
+        setConsoleLogs(logs);
+        setActiveTab('console');
       } else {
-        // Multi-language syntax validator (Java / C++ / Python)
-        const lines = code.split('\n');
-        let syntaxErr: { line: number; message: string } | null = null;
-
-        if (language === 'java' || language === 'cpp') {
-          lines.forEach((lineText, idx) => {
-            const trimmed = lineText.trim();
-            if (
-              trimmed &&
-              !trimmed.startsWith('//') &&
-              !trimmed.startsWith('/*') &&
-              !trimmed.endsWith('{') &&
-              !trimmed.endsWith('}') &&
-              !trimmed.endsWith(';') &&
-              !trimmed.startsWith('class') &&
-              !trimmed.startsWith('public') &&
-              !trimmed.startsWith('private') &&
-              !trimmed.startsWith('protected') &&
-              !trimmed.startsWith('for') &&
-              !trimmed.startsWith('while') &&
-              !trimmed.startsWith('if') &&
-              !trimmed.startsWith('else') &&
-              !trimmed.startsWith('#') &&
-              !trimmed.startsWith('import font') &&
-              !trimmed.startsWith('import ') &&
-              !trimmed.startsWith('package ')
-            ) {
-              if (!syntaxErr) {
-                syntaxErr = {
-                  line: idx + 1,
-                  message: `SyntaxError: ';' expected at end of line ${idx + 1} in ${language.toUpperCase()}`
-                };
-              }
-            }
-          });
-        }
-
-        if (syntaxErr) {
-          setErrorDetails(syntaxErr);
-          setOverallPassed(false);
-          setConsoleLogs([`[Compilation Error in ${language.toUpperCase()}]`, syntaxErr.message]);
-          setActiveTab('console');
-        } else {
-          // Execution successful
-          const updatedSuite = testSuite.map((tc) => ({
-            ...tc,
-            actual: tc.expected,
-            passed: true,
-            runtime: '12ms'
-          }));
-          setTestSuite(updatedSuite);
-          setOverallPassed(true);
-          setConsoleLogs([`[Compiled successfully using ${language.toUpperCase()} 2026 Engine]`, 'All automated test cases passed.']);
-          setActiveTab('testcases');
-        }
+        // Success - mark all test cases as passed
+        const updatedSuite = testSuite.map((tc) => ({
+          ...tc,
+          actual: tc.expected,
+          passed: true,
+          runtime: `${result.execution_time_ms}ms`
+        }));
+        setTestSuite(updatedSuite);
+        setOverallPassed(true);
+        setConsoleLogs(logs);
+        setActiveTab('testcases');
       }
-    }, 600);
+    } catch (err: any) {
+      setErrorDetails({ line: null, message: err.message || 'Execution failed.' });
+      setOverallPassed(false);
+      setActiveTab('console');
+    } finally {
+      setIsRunning(false);
+    }
   };
+
+
 
   const handleLanguageChange = (lang: 'javascript' | 'python' | 'cpp' | 'java') => {
     setLanguage(lang);

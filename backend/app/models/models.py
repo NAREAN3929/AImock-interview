@@ -123,3 +123,27 @@ class AdminLog(Base):
     action = Column(String(255), nullable=False)
     detail = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+
+class CollegeDrive(Base):
+    __tablename__ = "college_drives"
+
+    id = Column(Integer, primary_key=True, index=True)
+    company_name = Column(String(255), nullable=False)
+    role_offered = Column(String(255), nullable=False)
+    drive_date = Column(String(100), nullable=False)
+    status = Column(String(50), default="Scheduled") # Scheduled, Active, Completed
+    min_cgpa = Column(Float, default=7.0)
+    eligible_students_count = Column(Integer, default=120)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class PlacementMetric(Base):
+    __tablename__ = "placement_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_year = Column(String(20), default="2026")
+    total_enrolled = Column(Integer, default=320)
+    total_placed = Column(Integer, default=245)
+    average_readiness_score = Column(Float, default=83.4)
+    highest_package_lpa = Column(Float, default=44.0)
+    average_package_lpa = Column(Float, default=14.5)
+

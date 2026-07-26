@@ -14,48 +14,55 @@ export const P2PMockRoom: React.FC = () => {
   const [showAiRecs, setShowAiRecs] = useState(true);
   const [mediaError, setMediaError] = useState<string | null>(null);
 
-  // WebRTC Media Stream Refs
+  // WebRTC Media Stream & WebSocket Refs
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const [peerCount, setPeerCount] = useState(1);
 
-  // Peer Evaluation State
-  const [rating, setRating] = useState(4.5);
-  const [peerFeedback, setPeerFeedback] = useState('Great explanation of data structures and O(N) complexity!');
-  const [submittedFeedback, setSubmittedFeedback] = useState(false);
-
-  // Native Fullscreen API Handler
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => {
-        setIsFullscreen(true);
-        setShowAiRecs(false); // Hide AI recommendation during fullscreen
-      }).catch(err => {
-        console.warn("Fullscreen request error:", err);
-      });
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().then(() => {
-          setIsFullscreen(false);
-          setShowAiRecs(true);
-        });
-      }
-    }
-  };
-
-  // Sync state with native browser ESC key or fullscreenchange event
+  // Initialize WebSockets connection when in Room
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      const isFS = !!document.fullscreenElement;
-      setIsFullscreen(isFS);
-      if (isFS) {
-        setShowAiRecs(false); // Automatically hide AI recommendation during fullscreen
-      }
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    };
-  }, []);
+    if (joinedRoom && roomCode) {
+      const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
+      const wsProtocol = apiBase.startsWith('https') ? 'wss:' : 'ws:';
+      const hostPath = apiBase.replace(/^https?:\/\//, '');
+      const wsUrl = `${wsProtocol}//${hostPath}/ws/p2p/${roomCode}`;
+      const socket = new WebSocket(wsUrl);
+      wsRef.current = socket;
+
+
+      socket.onopen = () => {
+        console.log(`Connected to P2P WebSocket signaling room: ${roomCode}`);
+      };
+
+      socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.peer_count !== undefined) {
+            setPeerCount(data.peer_count);
+          }
+          if (data.type === 'peer_connected') {
+            console.log('Peer connected to room!');
+          }
+        } catch (err) {
+          console.warn('WebSocket message error:', err);
+        }
+      };
+
+      socket.onerror = (err) => {
+        console.warn('WebSocket connection error (using local state fallback):', err);
+      };
+
+      socket.onclose = () => {
+        console.log('P2P WebSocket disconnected');
+      };
+
+      return () => {
+        socket.close();
+        wsRef.current = null;
+      };
+    }
+  }, [joinedRoom, roomCode]);
 
   // Initialize live Webcam and Audio Media Stream when in Room
   useEffect(() => {
@@ -88,6 +95,7 @@ export const P2PMockRoom: React.FC = () => {
       }
     };
   }, [joinedRoom]);
+
 
   // Toggle Video Track
   useEffect(() => {

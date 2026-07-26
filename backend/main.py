@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.session import engine, Base
-from app.routers import auth, interview, resume, admin
+from app.routers import auth, interview, resume, admin, websocket, code, tpo, p2p_ws
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -30,8 +30,13 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(interview.router, prefix=settings.API_V1_STR)
 app.include_router(resume.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
+app.include_router(websocket.router, prefix=settings.API_V1_STR)
+app.include_router(code.router, prefix=settings.API_V1_STR)
+app.include_router(tpo.router, prefix=settings.API_V1_STR)
+app.include_router(p2p_ws.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
+
 def root():
     return {
         "status": "online",

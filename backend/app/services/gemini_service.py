@@ -17,11 +17,17 @@ class GeminiService:
             try:
                 import google.generativeai as genai
                 genai.configure(api_key=api_key)
-                self.model = genai.GenerativeModel('gemini-1.5-flash')
-                logger.info("Google Gemini API configured successfully!")
+                for model_name in ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-pro']:
+                    try:
+                        self.model = genai.GenerativeModel(model_name)
+                        logger.info(f"Google Gemini API configured successfully with model '{model_name}'!")
+                        break
+                    except Exception:
+                        continue
             except Exception as e:
                 logger.warning(f"Failed to initialize Google Gemini API client: {e}. Fallback engine will be used.")
                 self.model = None
+
 
     def generate_interview_questions(self, role: str, experience: str, company: str, interview_type: str, count: int = 5) -> List[Dict[str, Any]]:
         self._init_client()
