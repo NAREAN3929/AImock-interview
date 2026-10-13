@@ -4,7 +4,7 @@ import { InterviewerAvatar } from './InterviewerAvatar';
 import { AudioVisualizer } from './AudioVisualizer';
 import { CodeSandbox } from './CodeSandbox';
 import { BodyLanguageDetector } from './BodyLanguageDetector';
-import { evaluateAnswerApi } from '../services/api';
+import { evaluateAnswerApi, updateStudyPlanTaskStatusApi } from '../services/api';
 import { speakText, stopSpeaking, VoiceRecognizer } from '../services/speech';
 import { 
   Mic, 
@@ -27,7 +27,16 @@ import {
 } from 'lucide-react';
 
 export const LiveInterview: React.FC = () => {
-  const { activeSession, setActiveSession, addEvaluation, evaluations, setActiveTab, addPastInterview } = useStore();
+  const { 
+    activeSession, 
+    setActiveSession, 
+    addEvaluation, 
+    evaluations, 
+    setActiveTab, 
+    addPastInterview, 
+    studyPlan, 
+    updateStudyPlanTaskStatus 
+  } = useStore();
 
   if (!activeSession || !activeSession.questions || activeSession.questions.length === 0) {
     return (
@@ -51,6 +60,7 @@ export const LiveInterview: React.FC = () => {
   const [responseMode, setResponseMode] = useState<'text' | 'code'>('text');
   const [userText, setUserText] = useState('');
   const [codeContent, setCodeContent] = useState(currentQuestion?.code_template || '');
+  const [testResultSummary, setTestResultSummary] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [avatarStatus, setAvatarStatus] = useState<'idle' | 'speaking' | 'listening' | 'evaluating'>('idle');
   const [evaluating, setEvaluating] = useState(false);
@@ -117,11 +127,15 @@ export const LiveInterview: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentQIndex]);
 
-  // Read out question when current question changes
+  // Synchronize question state when current question changes
   useEffect(() => {
     if (currentQuestion) {
       setQuestionTimer(0);
       setShowHint(false);
+      setUserText('');
+      setTestResultSummary(null);
+      setCodeContent(currentQuestion.code_template || '');
+      setResponseMode(currentQuestion.code_template ? 'code' : 'text');
       setAvatarStatus('speaking');
       speakText(currentQuestion.question_text, () => {
         setAvatarStatus('idle');
@@ -180,13 +194,30 @@ export const LiveInterview: React.FC = () => {
       recognizerRef.current.stop();
     }
 
+    const isUnfinishedCode = responseMode === 'code' && (
+      !codeContent ||
+      codeContent.includes('// TODO') ||
+      codeContent.includes('# TODO') ||
+      codeContent.includes('return [];') ||
+      codeContent.includes('return []') ||
+      codeContent.includes('return new int[]{};') ||
+      codeContent.includes('return {};')
+    );
+
+    const testResultsToSend = responseMode === 'code'
+      ? (testResultSummary || (isUnfinishedCode ? 'Failed (0/3 Passed - Incomplete starter code)' : 'Code submitted without manual test run'))
+      : undefined;
+
     try {
       const evalResult = await evaluateAnswerApi({
         interview_id: activeSession.id,
         question_id: currentQuestion.id,
-        user_response: userText || "Submitted technical solution via code sandbox.",
+        question_text: currentQuestion.question_text,
+        test_results: testResultsToSend,
+        user_response: userText || (responseMode === 'code' ? `Submitted technical code solution (${testResultsToSend || 'Code sandbox'})` : "Submitted technical solution via code sandbox."),
         code_submission: responseMode === 'code' ? codeContent : undefined,
-        audio_duration_sec: questionTimer
+        audio_duration_sec: questionTimer,
+        persona: activeSession.persona
       });
 
       addEvaluation(currentQuestion.id, evalResult);
@@ -205,6 +236,7 @@ export const LiveInterview: React.FC = () => {
         currentQuestionIndex: currentQIndex + 1
       });
       setUserText('');
+      setTestResultSummary(null);
       setShowHint(false);
     } else {
       // Exit fullscreen if active
@@ -214,6 +246,18 @@ export const LiveInterview: React.FC = () => {
 
       const allScores = Object.values(evaluations).map(e => e.score);
       const overallAvg = allScores.length > 0 ? Math.round(allScores.reduce((a, b) => a + b, 0) / allScores.length) : 86;
+      const techScores = Object.values(evaluations).map(e => e.technical_accuracy).filter(Boolean);
+      const techAvg = techScores.length > 0 ? Math.round(techScores.reduce((a, b) => a + b, 0) / techScores.length) : Math.round(overallAvg * 1.02);
+      const clarityScores = Object.values(evaluations).map(e => e.clarity_score).filter(Boolean);
+      const commAvg = clarityScores.length > 0 ? Math.round(clarityScores.reduce((a, b) => a + b, 0) / clarityScores.length) : Math.round(overallAvg * 0.98);
+      const starScores = Object.values(evaluations).map(e => e.star_method_score).filter(Boolean);
+      const starAvg = starScores.length > 0 ? Math.round(starScores.reduce((a, b) => a + b, 0) / starScores.length) : Math.round(overallAvg * 0.96);
+      const wpms = Object.values(evaluations).map(e => e.wpm).filter(Boolean);
+      const avgWpm = wpms.length > 0 ? Math.round(wpms.reduce((a, b) => a + b, 0) / wpms.length) : 138;
+      const totalFillers = Object.values(evaluations).reduce((acc, curr) => acc + (curr.filler_words_detected || 0), 0);
+      
+      const allStrengths = Object.values(evaluations).flatMap(e => e.strengths || []);
+      const allImprovements = Object.values(evaluations).flatMap(e => e.improvements || []);
 
       addPastInterview({
         id: activeSession.id,
@@ -223,10 +267,29 @@ export const LiveInterview: React.FC = () => {
         difficulty: activeSession.difficulty,
         interview_type: activeSession.interviewType,
         overall_score: overallAvg,
-        hiring_recommendation: overallAvg >= 85 ? 'Strong Hire' : 'Hire',
+        technical_score: techAvg,
+        communication_score: commAvg,
+        behavioral_score: starAvg,
+        confidence_score: Math.round(overallAvg * 0.95),
+        hiring_recommendation: overallAvg >= 88 ? 'Strong Hire' : overallAvg >= 78 ? 'Hire' : 'Lean Hire',
         status: 'completed',
+        duration_minutes: Math.max(Math.round((activeSession.questions?.length || 3) * 4), 10),
+        question_count: activeSession.questions?.length || 3,
+        average_wpm: avgWpm,
+        total_fillers: totalFillers,
+        strengths: allStrengths.slice(0, 3),
+        improvements: allImprovements.slice(0, 2),
         created_at: new Date().toISOString()
       });
+
+      // Auto-mark first pending mock_interview task in study plan
+      const pendingMockTask = studyPlan?.tasks?.find(t => t.status === 'pending' && t.session_type === 'mock_interview');
+      if (pendingMockTask) {
+        updateStudyPlanTaskStatus(pendingMockTask.id, 'done');
+        updateStudyPlanTaskStatusApi(pendingMockTask.id, 'done').catch((err) => {
+          console.warn('Study plan auto-complete notice:', err);
+        });
+      }
 
       setActiveTab('report');
     }
@@ -322,7 +385,7 @@ export const LiveInterview: React.FC = () => {
         
         {/* Left Column: AI Interviewer Avatar & Question prompt */}
         <div className="space-y-6 relative">
-          <BodyLanguageDetector fillerWordCount={fillerCount} />
+          <BodyLanguageDetector initialCameraActive={true} fillerWordCount={fillerCount} />
           <InterviewerAvatar 
             status={avatarStatus} 
             persona={activeSession.persona || 'strict'} 
@@ -431,6 +494,7 @@ export const LiveInterview: React.FC = () => {
               <CodeSandbox
                 initialCode={currentQuestion?.code_template || codeContent}
                 onCodeChange={(c) => setCodeContent(c)}
+                onTestResult={(res) => setTestResultSummary(res.summary)}
               />
             )}
 
@@ -460,16 +524,42 @@ export const LiveInterview: React.FC = () => {
           </div>
 
           {currentEval && (
-            <div className="glass-panel p-6 rounded-2xl border border-emerald-500/30 space-y-4 animate-fade-in">
+            <div className={`glass-panel p-6 rounded-2xl border space-y-4 animate-fade-in ${
+              currentEval.score >= 75 
+                ? 'border-emerald-500/30' 
+                : currentEval.score >= 50 
+                  ? 'border-amber-500/30' 
+                  : 'border-rose-500/40'
+            }`}>
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold text-base">
-                  <CheckCircle2 className="w-5 h-5" />
+                <div className={`flex items-center gap-2 font-bold text-base ${
+                  currentEval.score >= 75 
+                    ? 'text-emerald-400' 
+                    : currentEval.score >= 50 
+                      ? 'text-amber-400' 
+                      : 'text-rose-400'
+                }`}>
+                  {currentEval.score >= 75 ? (
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                  ) : currentEval.score >= 50 ? (
+                    <AlertTriangle className="w-5 h-5 text-amber-400" />
+                  ) : (
+                    <AlertTriangle className="w-5 h-5 text-rose-400" />
+                  )}
                   <span>Gemini AI Evaluation Complete</span>
                 </div>
 
                 <div className="flex items-center gap-2 font-mono">
                   <span className="text-xs text-slate-400">Score:</span>
-                  <span className="text-xl font-extrabold text-emerald-400">{currentEval.score}/100</span>
+                  <span className={`text-xl font-extrabold ${
+                    currentEval.score >= 75 
+                      ? 'text-emerald-400' 
+                      : currentEval.score >= 50 
+                        ? 'text-amber-400' 
+                        : 'text-rose-400'
+                  }`}>
+                    {currentEval.score}/100
+                  </span>
                 </div>
               </div>
 
@@ -515,6 +605,21 @@ export const LiveInterview: React.FC = () => {
                 </div>
                 <p className="text-slate-300 italic leading-relaxed">{currentEval.model_answer}</p>
               </div>
+
+              {currentEval.adaptive_followup_question && (
+                <div className="bg-violet-950/40 p-4 rounded-xl border border-violet-500/40 text-xs space-y-2">
+                  <div className="flex items-center gap-2 text-violet-300 font-bold">
+                    <Sparkles className="w-4 h-4 text-violet-400 animate-pulse" />
+                    <span>Gemini AI Probing Follow-Up Challenge</span>
+                  </div>
+                  <p className="text-white font-medium italic">
+                    "{currentEval.adaptive_followup_question}"
+                  </p>
+                  <p className="text-[11px] text-slate-400">
+                    💡 The interviewer wants to probe deeper. Reflect on your approach or proceed to the next question when ready.
+                  </p>
+                </div>
+              )}
 
               <div className="text-right pt-2">
                 <button

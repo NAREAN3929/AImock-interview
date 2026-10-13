@@ -1,5 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Video, Mic, MicOff, VideoOff, Copy, CheckCircle2, RefreshCw, Send, Sparkles, Award, Star, MessageSquare, AlertCircle, Maximize2, Minimize2 } from 'lucide-react';
+import { 
+  Users, Video, Mic, MicOff, VideoOff, Copy, CheckCircle2, RefreshCw, 
+  Sparkles, Star, Maximize2, Minimize2, Trash2, Flag, X, Clock, 
+  ShieldAlert, Check, HelpCircle, Award
+} from 'lucide-react';
 
 export const P2PMockRoom: React.FC = () => {
   const [roomCode, setRoomCode] = useState('');
@@ -22,6 +26,35 @@ export const P2PMockRoom: React.FC = () => {
   const [rating, setRating] = useState(4.5);
   const [peerFeedback, setPeerFeedback] = useState('Great explanation of data structures and O(N) complexity!');
   const [submittedFeedback, setSubmittedFeedback] = useState(false);
+
+  // Session Duration Timer
+  const [sessionSeconds, setSessionSeconds] = useState(0);
+
+  // Modals & Feedback Notifications
+  const [isFinishModalOpen, setIsFinishModalOpen] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [statusToast, setStatusToast] = useState<string | null>(null);
+
+  // Timer ticker while in room
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (joinedRoom) {
+      interval = setInterval(() => {
+        setSessionSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      setSessionSeconds(0);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [joinedRoom]);
+
+  const formatTimer = (totalSecs: number) => {
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Native Fullscreen API Handler
   const toggleFullscreen = () => {
@@ -48,7 +81,7 @@ export const P2PMockRoom: React.FC = () => {
       const isFS = !!document.fullscreenElement;
       setIsFullscreen(isFS);
       if (isFS) {
-        setShowAiRecs(false); // Automatically hide AI recommendation during fullscreen
+        setShowAiRecs(false);
       }
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -119,11 +152,60 @@ export const P2PMockRoom: React.FC = () => {
     const newCode = `P2P-${Math.floor(1000 + Math.random() * 9000)}`;
     setRoomCode(newCode);
     setJoinedRoom(true);
+    setSessionSeconds(0);
+    setSubmittedFeedback(false);
+  };
+
+  // Comprehensive Room Deletion and Tear Down
+  const handleDeleteRoom = () => {
+    const closedCode = roomCode;
+
+    // 1. Release and terminate hardware video/audio streams
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach(track => track.stop());
+      mediaStreamRef.current = null;
+    }
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = null;
+    }
+
+    // 2. Exit fullscreen if open
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+    setIsFullscreen(false);
+
+    // 3. Clear room session data
+    setJoinedRoom(false);
+    setRoomCode('');
+    setSessionSeconds(0);
+    setIsFinishModalOpen(false);
+    setIsDeleteConfirmOpen(false);
+    setSubmittedFeedback(false);
+
+    // 4. Show success toast notification
+    setStatusToast(`Room ${closedCode || 'session'} has been closed and deleted successfully.`);
+    setTimeout(() => setStatusToast(null), 6000);
+  };
+
+  const handleFinishMock = () => {
+    setIsFinishModalOpen(true);
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in relative">
       
+      {/* Toast Notification */}
+      {statusToast && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-emerald-950/90 border border-emerald-500/40 text-emerald-200 text-xs font-mono font-bold shadow-2xl backdrop-blur-xl animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{statusToast}</span>
+          <button onClick={() => setStatusToast(null)} className="ml-2 text-slate-400 hover:text-white">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl glass-panel border border-violet-500/30">
         <div className="space-y-1">
@@ -141,9 +223,10 @@ export const P2PMockRoom: React.FC = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleCreateRoom}
-              className="px-5 py-3 rounded-2xl glow-gradient text-white text-xs font-bold shadow-lg shadow-violet-600/30 hover:scale-105 transition-transform"
+              className="px-5 py-3 rounded-2xl glow-gradient text-white text-xs font-bold shadow-lg shadow-violet-600/30 hover:scale-105 transition-transform flex items-center gap-2"
             >
-              Create New P2P Interview Room
+              <Sparkles className="w-4 h-4" />
+              <span>Create New P2P Interview Room</span>
             </button>
           </div>
         )}
@@ -151,85 +234,144 @@ export const P2PMockRoom: React.FC = () => {
 
       {!joinedRoom ? (
         /* ROOM LOBBY / JOIN ROOM SCREEN */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-            <h3 className="text-xl font-bold text-white">Join Existing P2P Room</h3>
-            <p className="text-xs text-slate-400">Enter room code provided by your peer candidate:</p>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
+              <h3 className="text-xl font-bold text-white">Join Existing P2P Room</h3>
+              <p className="text-xs text-slate-400">Enter room code provided by your peer candidate:</p>
 
-            <div>
-              <label className="block text-xs font-mono font-bold text-slate-300 mb-2">P2P ROOM CODE</label>
-              <input
-                type="text"
-                value={roomCode}
-                onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                placeholder="Enter room code (e.g. P2P-7267)"
-                className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 text-white font-mono text-sm font-bold focus:border-violet-500 focus:outline-none uppercase"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-xs font-mono font-bold text-slate-300">SELECT YOUR INITIAL ROLE</label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setUserRole('interviewer')}
-                  className={`p-3.5 rounded-2xl font-bold text-xs font-mono border transition-all ${
-                    userRole === 'interviewer'
-                      ? 'bg-violet-600/20 border-violet-500 text-white shadow-md'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  🎭 Interviewer (Ask Qs)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserRole('candidate')}
-                  className={`p-3.5 rounded-2xl font-bold text-xs font-mono border transition-all ${
-                    userRole === 'candidate'
-                      ? 'bg-violet-600/20 border-violet-500 text-white shadow-md'
-                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  🎓 Candidate (Answer Qs)
-                </button>
+              <div>
+                <label className="block text-xs font-mono font-bold text-slate-300 mb-2">P2P ROOM CODE</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={roomCode}
+                    onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                    placeholder="Enter room code (e.g. P2P-7267)"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl px-4 py-3.5 text-white font-mono text-sm font-bold focus:border-violet-500 focus:outline-none uppercase"
+                  />
+                  {roomCode && (
+                    <button
+                      type="button"
+                      onClick={() => setRoomCode('')}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 p-1"
+                      title="Clear code"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
+
+              <div className="space-y-2">
+                <label className="block text-xs font-mono font-bold text-slate-300">SELECT YOUR INITIAL ROLE</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUserRole('interviewer')}
+                    className={`p-3.5 rounded-2xl font-bold text-xs font-mono border transition-all ${
+                      userRole === 'interviewer'
+                        ? 'bg-violet-600/20 border-violet-500 text-white shadow-md'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🎭 Interviewer (Ask Qs)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUserRole('candidate')}
+                    className={`p-3.5 rounded-2xl font-bold text-xs font-mono border transition-all ${
+                      userRole === 'candidate'
+                        ? 'bg-violet-600/20 border-violet-500 text-white shadow-md'
+                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🎓 Candidate (Answer Qs)
+                  </button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  if (roomCode.trim()) {
+                    setJoinedRoom(true);
+                  } else {
+                    handleCreateRoom();
+                  }
+                }}
+                className="w-full py-4 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-xl shadow-violet-600/30 transition-transform"
+              >
+                {roomCode.trim() ? 'Enter P2P Mock Room' : 'Create & Enter Instant Room'}
+              </button>
             </div>
 
-            <button
-              onClick={() => setJoinedRoom(true)}
-              className="w-full py-4 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow-xl shadow-violet-600/30 transition-transform"
-            >
-              Enter P2P Mock Room
-            </button>
+            {/* Peer Matchmaking Card */}
+            <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-mono font-bold border border-cyan-500/30">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>AI AUTOMATIC PEER MATCHMAKER</span>
+                </div>
+                <h3 className="text-xl font-bold text-white">Instant Peer Matchmaking</h3>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Connect with candidates online practicing for Software Engineer, Data Engineer, or System Design roles.
+                </p>
+              </div>
+
+              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-emerald-400">14 Candidates Online</span>
+                  <span className="font-mono text-slate-500">Queue time: &lt;15s</span>
+                </div>
+                <p className="text-[11px] text-slate-400">Matched peers take turns asking AI-generated technical questions and providing rubrics.</p>
+              </div>
+
+              <button
+                onClick={handleCreateRoom}
+                className="w-full py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm shadow-xl shadow-cyan-600/30 transition-transform"
+              >
+                Find Random Peer Match Now
+              </button>
+            </div>
           </div>
 
-          {/* Peer Matchmaking Card */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6 flex flex-col justify-between">
-            <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-300 text-xs font-mono font-bold border border-cyan-500/30">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>AI AUTOMATIC PEER MATCHMAKER</span>
-              </div>
-              <h3 className="text-xl font-bold text-white">Instant Peer Matchmaking</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Connect with candidates online practicing for Software Engineer, Data Engineer, or System Design roles.
-              </p>
+          {/* How Mock Rooms & Room Deletion Work Info Card */}
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800/80 bg-slate-900/40">
+            <div className="flex items-center gap-2 mb-3">
+              <HelpCircle className="w-4 h-4 text-violet-400" />
+              <h4 className="text-sm font-bold text-white">How P2P Mock Rooms, Completion & Room Deletion Work</h4>
             </div>
-
-            <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-xs text-slate-300 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-emerald-400">14 Candidates Online</span>
-                <span className="font-mono text-slate-500">Queue time: &lt;15s</span>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs text-slate-400">
+              <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                <div className="font-bold text-cyan-300 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-cyan-500/20 text-cyan-300 text-[10px] flex items-center justify-center font-mono">1</span>
+                  Create & Share Code
+                </div>
+                <p className="text-slate-400 leading-relaxed">
+                  A unique code (e.g. P2P-8421) is generated. Share it with your peer candidate to connect directly via WebRTC.
+                </p>
               </div>
-              <p className="text-[11px] text-slate-400">Matched peers take 30-minute turns asking AI-generated technical questions.</p>
-            </div>
 
-            <button
-              onClick={handleCreateRoom}
-              className="w-full py-4 rounded-2xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm shadow-xl shadow-cyan-600/30 transition-transform"
-            >
-              Find Random Peer Match Now
-            </button>
+              <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                <div className="font-bold text-emerald-300 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] flex items-center justify-center font-mono">2</span>
+                  Finish the Mock
+                </div>
+                <p className="text-slate-400 leading-relaxed">
+                  Click <strong className="text-emerald-300">Finish Mock</strong> to record peer star ratings, submit written evaluation notes, and view the final session summary.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-950/60 border border-slate-800 space-y-1.5">
+                <div className="font-bold text-rose-300 flex items-center gap-1.5">
+                  <span className="w-5 h-5 rounded-full bg-rose-500/20 text-rose-300 text-[10px] flex items-center justify-center font-mono">3</span>
+                  Delete & Destroy Room
+                </div>
+                <p className="text-slate-400 leading-relaxed">
+                  Click <strong className="text-rose-300">Delete Room</strong> anytime. This immediately releases your camera/mic and destroys the ephemeral room code.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -242,23 +384,30 @@ export const P2PMockRoom: React.FC = () => {
           
           {/* Room Toolbar */}
           <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <div className="px-3 py-1 rounded-xl bg-violet-600/20 border border-violet-500/40 text-violet-300 text-xs font-mono font-bold flex items-center gap-2">
                 <span>ROOM CODE: {roomCode}</span>
-                <button onClick={handleCopyCode} className="text-slate-400 hover:text-white">
+                <button onClick={handleCopyCode} className="text-slate-400 hover:text-white" title="Copy Room Code">
                   {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                 </button>
               </div>
 
-              <span className="text-xs font-mono text-cyan-400">
-                Role: <strong className="uppercase">{userRole}</strong>
-              </span>
+              <div className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-cyan-400 flex items-center gap-1.5">
+                <span>Role:</span>
+                <strong className="uppercase text-white">{userRole}</strong>
+              </div>
+
+              {/* Live Session Timer */}
+              <div className="px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300 flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>{formatTimer(sessionSeconds)}</span>
+              </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={() => setShowAiRecs(!showAiRecs)}
-                className={`px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
                   showAiRecs
                     ? 'bg-cyan-500/20 border-cyan-500/40 text-cyan-300 hover:bg-cyan-500/30'
                     : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-slate-200 hover:bg-slate-800'
@@ -266,12 +415,12 @@ export const P2PMockRoom: React.FC = () => {
                 title={showAiRecs ? "Hide AI Recommendations" : "Show AI Recommendations"}
               >
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{showAiRecs ? 'AI Recs: Shown' : 'AI Recs: Hidden'}</span>
+                <span>{showAiRecs ? 'AI Recs: On' : 'AI Recs: Off'}</span>
               </button>
 
               <button
                 onClick={toggleFullscreen}
-                className={`px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
+                className={`px-3 py-1.5 rounded-xl border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
                   isFullscreen
                     ? 'bg-amber-500/20 border-amber-500/50 text-amber-300 hover:bg-amber-500/30'
                     : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-800'
@@ -279,22 +428,36 @@ export const P2PMockRoom: React.FC = () => {
                 title={isFullscreen ? "Exit Full Screen Mode (Esc)" : "Enter Full Screen Mode"}
               >
                 {isFullscreen ? <Minimize2 className="w-3.5 h-3.5 text-amber-400" /> : <Maximize2 className="w-3.5 h-3.5 text-cyan-400" />}
-                <span>{isFullscreen ? 'Exit Full Screen' : 'Full Screen'}</span>
+                <span>{isFullscreen ? 'Exit Full' : 'Full Screen'}</span>
               </button>
 
               <button
                 onClick={() => setUserRole(r => r === 'interviewer' ? 'candidate' : 'interviewer')}
                 className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-mono text-amber-300 font-bold flex items-center gap-1.5"
+                title="Swap interviewer and candidate roles"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Swap Roles (Turn)</span>
+                <span>Swap Roles</span>
               </button>
 
+              {/* Finish Mock Button */}
               <button
-                onClick={() => setJoinedRoom(false)}
-                className="px-4 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white text-xs font-bold transition-colors"
+                onClick={handleFinishMock}
+                className="px-3.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 border border-emerald-500/40 text-emerald-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                title="Finish Mock Interview and View Summary"
               >
-                Leave P2P Room
+                <Flag className="w-3.5 h-3.5 text-emerald-400 group-hover:text-white" />
+                <span>Finish Mock</span>
+              </button>
+
+              {/* Delete / Close Room Button */}
+              <button
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600 border border-rose-500/40 text-rose-300 hover:text-white text-xs font-bold transition-all flex items-center gap-1.5"
+                title="Permanently Delete and Close Room"
+              >
+                <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                <span>Delete Room</span>
               </button>
             </div>
           </div>
@@ -396,75 +559,86 @@ export const P2PMockRoom: React.FC = () => {
           {/* AI Rubric & Peer Evaluation Form (Hidden during Fullscreen for Clean 50/50 Video View) */}
           {!isFullscreen && (
             <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-800 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <span className="text-xs font-mono text-violet-400 font-bold uppercase">AI Evaluation Co-Pilot</span>
-                <h3 className="text-lg font-bold text-white">Peer Evaluation & Scoring Rubric</h3>
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <span className="text-xs font-mono text-violet-400 font-bold uppercase">AI Evaluation Co-Pilot</span>
+                  <h3 className="text-lg font-bold text-white">Peer Evaluation & Scoring Rubric</h3>
+                </div>
+                <span className="text-xs font-mono text-emerald-400 font-bold">Live AI Scoring Sheet</span>
               </div>
-              <span className="text-xs font-mono text-emerald-400 font-bold">Live AI Scoring Sheet</span>
-            </div>
 
-            <div className="space-y-4">
-              {showAiRecs && (
-                <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono text-cyan-400 font-bold block">AI RECOMMENDED QUESTION FOR CANDIDATE:</span>
-                    <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                      Co-Pilot Hint
-                    </span>
+              <div className="space-y-4">
+                {showAiRecs && (
+                  <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 space-y-2 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-mono text-cyan-400 font-bold block">AI RECOMMENDED QUESTION FOR CANDIDATE:</span>
+                      <span className="text-[10px] font-mono text-slate-500 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                        Co-Pilot Hint
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-200 leading-relaxed">
+                      "Explain how Hash Maps handle collision resolution (Chaining vs Open Addressing). What is the worst-case time complexity if all keys hash to the same index?"
+                    </p>
                   </div>
-                  <p className="text-xs font-semibold text-slate-200 leading-relaxed">
-                    "Explain how Hash Maps handle collision resolution (Chaining vs Open Addressing). What is the worst-case time complexity if all keys hash to the same index?"
-                  </p>
-                </div>
-              )}
+                )}
 
-              <div className="space-y-2">
-                <label className="block text-xs font-mono font-bold text-slate-300">Rate Peer Performance (1 to 5 Stars):</label>
-                <div className="flex items-center gap-2">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setRating(star)}
-                      className={`p-2 rounded-xl transition-all ${
-                        rating >= star ? 'text-amber-400 bg-amber-500/10' : 'text-slate-600 bg-slate-900'
-                      }`}
-                    >
-                      <Star className="w-5 h-5 fill-current" />
-                    </button>
-                  ))}
-                  <span className="text-xs font-mono text-amber-300 font-bold ml-2">{rating} / 5 Stars</span>
+                <div className="space-y-2">
+                  <label className="block text-xs font-mono font-bold text-slate-300">Rate Peer Performance (1 to 5 Stars):</label>
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setRating(star)}
+                        className={`p-2 rounded-xl transition-all ${
+                          rating >= star ? 'text-amber-400 bg-amber-500/10' : 'text-slate-600 bg-slate-900'
+                        }`}
+                      >
+                        <Star className="w-5 h-5 fill-current" />
+                      </button>
+                    ))}
+                    <span className="text-xs font-mono text-amber-300 font-bold ml-2">{rating} / 5 Stars</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-mono font-bold text-slate-300 mb-1.5">Peer Feedback Notes:</label>
+                  <textarea
+                    value={peerFeedback}
+                    onChange={(e) => setPeerFeedback(e.target.value)}
+                    rows={3}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 focus:border-violet-500 focus:outline-none leading-relaxed font-mono"
+                  />
+                </div>
+
+                {submittedFeedback && (
+                  <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-mono flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span>✓ Peer evaluation submitted and recorded to candidate's history!</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <button
+                    onClick={() => {
+                      setSubmittedFeedback(true);
+                      setTimeout(() => setSubmittedFeedback(false), 4000);
+                    }}
+                    className="flex-1 w-full py-3.5 rounded-2xl glow-gradient text-white font-bold text-xs shadow-lg shadow-violet-600/30 hover:scale-[1.01] transition-transform"
+                  >
+                    Submit Peer Evaluation Score
+                  </button>
+
+                  <button
+                    onClick={handleFinishMock}
+                    className="w-full sm:w-auto px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 transition-transform flex items-center justify-center gap-2"
+                  >
+                    <Flag className="w-4 h-4" />
+                    <span>Finish Mock & Review</span>
+                  </button>
                 </div>
               </div>
-
-              <div>
-                <label className="block text-xs font-mono font-bold text-slate-300 mb-1.5">Peer Feedback Notes:</label>
-                <textarea
-                  value={peerFeedback}
-                  onChange={(e) => setPeerFeedback(e.target.value)}
-                  rows={3}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3.5 text-xs text-slate-200 focus:border-violet-500 focus:outline-none leading-relaxed font-mono"
-                />
-              </div>
-
-              {submittedFeedback && (
-                <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs font-mono">
-                  ✓ Peer evaluation submitted and recorded to candidate's history!
-                </div>
-              )}
-
-              <button
-                onClick={() => {
-                  setSubmittedFeedback(true);
-                  setTimeout(() => setSubmittedFeedback(false), 4000);
-                }}
-                className="w-full py-3.5 rounded-2xl glow-gradient text-white font-bold text-xs shadow-lg shadow-violet-600/30 hover:scale-[1.01] transition-transform"
-              >
-                Submit Peer Evaluation Score
-              </button>
             </div>
-          </div>
           )}
 
           {/* Dedicated Full-Screen Floating Video & Room Controls Bar */}
@@ -507,7 +681,7 @@ export const P2PMockRoom: React.FC = () => {
                 title={showAiRecs ? "Hide AI Recommendation" : "Show AI Recommendation"}
               >
                 <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden sm:inline">{showAiRecs ? 'AI Recs: Visible' : 'AI Recs: Hidden'}</span>
+                <span className="hidden sm:inline">{showAiRecs ? 'AI Recs: On' : 'AI Recs: Off'}</span>
               </button>
 
               <button
@@ -527,16 +701,144 @@ export const P2PMockRoom: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setJoinedRoom(false)}
-                className="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-transform"
+                onClick={handleFinishMock}
+                className="px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/30 transition-transform flex items-center gap-1.5"
               >
-                End / Leave Room
+                <Flag className="w-3.5 h-3.5" />
+                <span>Finish Mock</span>
+              </button>
+
+              <button
+                onClick={() => setIsDeleteConfirmOpen(true)}
+                className="px-5 py-2.5 rounded-full bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-transform flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete Room</span>
               </button>
             </div>
           )}
 
         </div>
       )}
+
+      {/* FINISH MOCK INTERVIEW SUMMARY MODAL */}
+      {isFinishModalOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0f172a] border border-slate-800 max-w-lg w-full rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl relative">
+            
+            <button
+              onClick={() => setIsFinishModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <Award className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-mono font-bold text-emerald-400 uppercase tracking-wider">Session Complete</span>
+                <h3 className="text-xl font-bold text-white">Peer Mock Interview Summary</h3>
+              </div>
+            </div>
+
+            <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800/80 text-xs">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-900">
+                <span className="text-slate-400 font-mono">Room Code:</span>
+                <span className="text-white font-mono font-bold">{roomCode}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-900">
+                <span className="text-slate-400 font-mono">Interview Duration:</span>
+                <span className="text-cyan-400 font-mono font-bold">{formatTimer(sessionSeconds)}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-900">
+                <span className="text-slate-400 font-mono">Your Final Role:</span>
+                <span className="text-amber-300 font-mono font-bold uppercase">{userRole}</span>
+              </div>
+              <div className="flex items-center justify-between pb-2 border-b border-slate-900">
+                <span className="text-slate-400 font-mono">Peer Evaluation Score:</span>
+                <span className="text-amber-400 font-mono font-bold flex items-center gap-1">
+                  <Star className="w-3.5 h-3.5 fill-current" />
+                  <span>{rating} / 5.0</span>
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-mono block mb-1">Feedback Notes:</span>
+                <p className="text-slate-200 italic bg-slate-900/60 p-2.5 rounded-xl border border-slate-800">
+                  "{peerFeedback}"
+                </p>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              You can now permanently delete and close this room, or swap roles to conduct turn 2.
+            </p>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <button
+                onClick={handleDeleteRoom}
+                className="w-full flex-1 py-3.5 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg shadow-rose-600/30 transition-transform flex items-center justify-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Close & Delete Room</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setUserRole(r => r === 'interviewer' ? 'candidate' : 'interviewer');
+                  setIsFinishModalOpen(false);
+                }}
+                className="w-full sm:w-auto px-5 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-mono text-xs font-bold border border-slate-700 transition-colors flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>Swap Roles for Turn 2</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM DELETE ROOM MODAL */}
+      {isDeleteConfirmOpen && (
+        <div className="fixed inset-0 z-[130] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-[#0f172a] border border-rose-500/30 max-w-md w-full rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl relative">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                <ShieldAlert className="w-6 h-6" />
+              </div>
+              <div>
+                <span className="text-[11px] font-mono font-bold text-rose-400 uppercase tracking-wider">Confirm Room Deletion</span>
+                <h3 className="text-lg font-bold text-white">Delete & Close P2P Room?</h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Are you sure you want to permanently delete and close room <strong className="text-white font-mono">{roomCode}</strong>?
+            </p>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              This will immediately disconnect all peers, stop camera and microphone feeds, and destroy the room session.
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => setIsDeleteConfirmOpen(false)}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteRoom}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 transition-transform flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Yes, Delete Room</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

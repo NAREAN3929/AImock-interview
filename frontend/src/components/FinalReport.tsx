@@ -148,7 +148,7 @@ export const FinalReport: React.FC = () => {
             </li>
             <li className="flex items-start gap-2">
               <span className="text-amber-400 font-bold">•</span>
-              <span>Practice 2-minute Rapid Flashcard drills to boost recall speed.</span>
+              <span>Review Company Cheat Sheets and coding bank to boost recall speed.</span>
             </li>
           </ul>
         </div>

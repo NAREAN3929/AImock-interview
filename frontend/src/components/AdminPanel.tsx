@@ -115,6 +115,15 @@ export const AdminPanel: React.FC = () => {
           </div>
 
           <button
+            onClick={() => setActiveTab('tpo-portal')}
+            className="px-3.5 py-2 rounded-xl bg-violet-600/20 border border-violet-500/40 text-violet-300 hover:bg-violet-600/30 text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+            title="Open Placement TPO Hub"
+          >
+            <Award className="w-4 h-4 text-emerald-400" />
+            <span>Placement TPO Hub</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('dashboard')}
             className="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 hover:text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/60 transition-all flex items-center justify-center hover:scale-110 shadow-md ml-2"
             title="Exit to Dashboard"

@@ -111,6 +111,30 @@ export const AptitudeTrainer: React.FC = () => {
         options: ['$650', '$698', '$700', '$750'],
         correctAnswer: 1,
         explanation: 'Interest for 1 year = 854 - 815 = $39. Interest for 3 years = 39 * 3 = $117. Principal = 815 - 117 = $698.'
+      },
+      {
+        id: 204,
+        category: 'Quantitative Aptitude',
+        question: 'A can finish a work in 18 days and B can do the same in 15 days. B worked for 10 days and left. In how many days can A finish the remaining work alone?',
+        options: ['5 days', '6 days', '7.5 days', '8 days'],
+        correctAnswer: 1,
+        explanation: 'B completed 10/15 = 2/3 of the work. Remaining = 1/3. A takes 18 * (1/3) = 6 days to finish alone.'
+      },
+      {
+        id: 205,
+        category: 'Quantitative Aptitude',
+        question: 'A shopkeeper sells an item at 20% profit. If the cost price is $250, what is the selling price?',
+        options: ['$280', '$290', '$300', '$310'],
+        correctAnswer: 2,
+        explanation: 'SP = Cost Price * (1 + Profit%) = 250 * 1.20 = $300.'
+      },
+      {
+        id: 206,
+        category: 'Quantitative Aptitude',
+        question: 'The ratio of ages of two persons is 4:7 and the difference between their ages is 15 years. What is the age of the elder person?',
+        options: ['25 years', '30 years', '35 years', '40 years'],
+        correctAnswer: 2,
+        explanation: '7x - 4x = 3x = 15 => x = 5. Elder person age = 7 * 5 = 35 years.'
       }
     ],
     logical: [
@@ -129,6 +153,30 @@ export const AptitudeTrainer: React.FC = () => {
         options: ['(1/3)', '(1/8)', '(2/8)', '(1/16)'],
         correctAnswer: 1,
         explanation: 'This is a geometric progression where each number is divided by 2. (1/4) / 2 = (1/8).'
+      },
+      {
+        id: 303,
+        category: 'Logical Reasoning',
+        question: 'Pointing to a photograph, a man said: "I have no brother or sister, but that man\'s father is my father\'s son." Whose photograph was it?',
+        options: ['His father', 'His son', 'His nephew', 'His own'],
+        correctAnswer: 1,
+        explanation: 'With no siblings, "my father\'s son" is himself. Therefore that man\'s father is himself, so it is his son.'
+      },
+      {
+        id: 304,
+        category: 'Logical Reasoning',
+        question: 'Which word does NOT belong with the others in the group?',
+        options: ['Index', 'Glossary', 'Chapter', 'Book'],
+        correctAnswer: 3,
+        explanation: 'Index, glossary, and chapter are constituent parts of a book; book is the composite entity.'
+      },
+      {
+        id: 305,
+        category: 'Logical Reasoning',
+        question: 'Statements: All cats are dogs. All dogs are birds.\nConclusions:\nI. All cats are birds.\nII. All birds are cats.',
+        options: ['Only conclusion I follows', 'Only conclusion II follows', 'Both follow', 'Neither follows'],
+        correctAnswer: 0,
+        explanation: 'By transitive deduction: Cats ⊂ Dogs ⊂ Birds, so All cats are birds. Conclusion I is strictly valid.'
       }
     ],
     verbal: [
@@ -139,11 +187,65 @@ export const AptitudeTrainer: React.FC = () => {
         options: ['Transient', 'Permanent', 'Fleeting', 'Short-lived'],
         correctAnswer: 1,
         explanation: 'Ephemeral means lasting a very short time. Permanent is the exact antonym.'
+      },
+      {
+        id: 402,
+        category: 'Verbal & Comprehension',
+        question: 'Select the sentence with the correct grammatical subject-verb agreement:',
+        options: [
+          'Neither the teacher nor the students was present.',
+          'Neither the teacher nor the students were present.',
+          'Neither the teacher or the students was present.',
+          'Neither the teachers nor the student were present.'
+        ],
+        correctAnswer: 1,
+        explanation: 'In correlative "neither... nor" constructions, the verb agrees with the closer subject ("students" -> plural "were").'
+      },
+      {
+        id: 403,
+        category: 'Verbal & Comprehension',
+        question: 'Choose the one-word substitute: "A person who renounces a religious or political belief or principle":',
+        options: ['Apostate', 'Ascetic', 'Iconoclast', 'Philistine'],
+        correctAnswer: 0,
+        explanation: 'An apostate is someone who formally abandons or renounces their political or religious convictions.'
+      },
+      {
+        id: 404,
+        category: 'Verbal & Comprehension',
+        question: 'Identify the word with the correct spelling:',
+        options: ['Accomodate', 'Acommodate', 'Accommodate', 'Acomodate'],
+        correctAnswer: 2,
+        explanation: 'Accommodate is spelled with double "c" and double "m".'
+      },
+      {
+        id: 405,
+        category: 'Verbal & Comprehension',
+        question: 'Select the meaning of the idiom: "To cut corners"',
+        options: [
+          'To take a short route while walking',
+          'To do something poorly or cheaply in order to save time or money',
+          'To navigate a sharp turn carefully',
+          'To reduce waste material in manufacturing'
+        ],
+        correctAnswer: 1,
+        explanation: 'To cut corners means undertaking a task substandardly or quickly to save cost or effort.'
       }
     ]
   };
 
-  const activeQuestionList = (questionPool[selectedTopic] || questionPool.pseudocode).slice(0, targetQuestionCount);
+  // Compose combined questions for full assessment drives
+  const fullPatternPool = [
+    ...(questionPool.pseudocode || []).slice(0, 3),
+    ...(questionPool.quantitative || []).slice(0, 3),
+    ...(questionPool.logical || []).slice(0, 2),
+    ...(questionPool.verbal || []).slice(0, 2)
+  ];
+
+  const activeQuestionList = (
+    selectedTopic === 'full' 
+      ? fullPatternPool 
+      : (questionPool[selectedTopic] || questionPool.pseudocode)
+  ).slice(0, targetQuestionCount);
   const currentQ = activeQuestionList[currentQIndex] || activeQuestionList[0];
 
   // Start Full-Screen Aptitude Practice
@@ -228,7 +330,13 @@ export const AptitudeTrainer: React.FC = () => {
                 return (
                   <div
                     key={t.id}
-                    onClick={() => setSelectedTopic(t.id as any)}
+                    onClick={() => {
+                      setSelectedTopic(t.id as any);
+                      setCurrentQIndex(0);
+                      setSelectedOption(null);
+                      setSubmitted(false);
+                      setScore(0);
+                    }}
                     className={`p-4 rounded-2xl border cursor-pointer transition-all ${
                       isSelected
                         ? 'bg-violet-600/20 border-violet-500 text-white shadow-xl shadow-violet-500/10 ring-2 ring-violet-500/50'

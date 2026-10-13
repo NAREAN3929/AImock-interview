@@ -7,6 +7,7 @@ import datetime
 router = APIRouter(prefix="/admin", tags=["Admin Panel"])
 
 @router.get("/metrics")
+@router.get("/analytics")
 def get_admin_metrics(db: Session = Depends(get_db)):
     total_users = db.query(User).count()
     total_interviews = db.query(Interview).count()

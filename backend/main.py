@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.database.session import engine, Base
-from app.routers import auth, interview, resume, admin
+from app.routers import auth, interview, resume, admin, roadmap, onboarding
 
 # Initialize database tables
 Base.metadata.create_all(bind=engine)
@@ -30,6 +30,8 @@ app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(interview.router, prefix=settings.API_V1_STR)
 app.include_router(resume.router, prefix=settings.API_V1_STR)
 app.include_router(admin.router, prefix=settings.API_V1_STR)
+app.include_router(roadmap.router, prefix=settings.API_V1_STR)
+app.include_router(onboarding.router, prefix=settings.API_V1_STR)
 
 @app.get("/")
 def root():
@@ -38,6 +40,19 @@ def root():
         "service": settings.PROJECT_NAME,
         "docs": "/docs",
         "version": "1.0.0"
+    }
+
+@app.get("/api/v1/health")
+def health():
+    try:
+        from app.services.gemini_service import GeminiService
+        s = GeminiService()
+        gemini_status = s.get_status()
+    except Exception as e:
+        gemini_status = {"configured": False, "status": "offline", "error": str(e)}
+    return {
+        "status": "healthy",
+        "gemini": gemini_status
     }
 
 if __name__ == "__main__":

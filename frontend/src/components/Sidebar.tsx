@@ -4,7 +4,6 @@ import { useStore } from '../store/useStore';
 import { 
   BarChart3, 
   Mic, 
-  Zap, 
   FileText, 
   BookOpen, 
   History, 
@@ -15,10 +14,9 @@ import {
   Award,
   MessageSquare,
   BrainCircuit,
-  DollarSign,
-  FileSpreadsheet,
   Crown,
-  Users
+  Users,
+  Compass
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,16 +34,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; adminOnly?: boolean }[] = [
     { id: 'dashboard', label: 'Career Pulse', icon: <BarChart3 className="w-5 h-5 text-violet-400" /> },
+    { id: 'roadmap', label: 'Career Roadmap', icon: <Compass className="w-5 h-5 text-cyan-400" /> },
     { id: 'setup', label: 'Start Interview', icon: <Mic className="w-5 h-5 text-emerald-400" /> },
     { id: 'p2p-room', label: 'Peer Mock Room', icon: <Users className="w-5 h-5 text-violet-400" /> },
     { id: 'company-oa', label: 'Company OA Simulators', icon: <Building2 className="w-5 h-5 text-pink-400" /> },
     { id: 'question-bank', label: 'Coding & Company Bank', icon: <BookOpen className="w-5 h-5 text-blue-400" /> },
     { id: 'aptitude', label: 'Aptitude Trainer', icon: <BrainCircuit className="w-5 h-5 text-amber-400" /> },
-    { id: 'tpo-portal', label: 'Placement TPO Hub', icon: <Award className="w-5 h-5 text-emerald-400" /> },
     { id: 'communication', label: 'Communication Lab', icon: <MessageSquare className="w-5 h-5 text-cyan-400" /> },
-    { id: 'salary-negotiation', label: 'Salary Negotiation AI', icon: <DollarSign className="w-5 h-5 text-emerald-400" /> },
-    { id: 'company-cheatsheets', label: 'Company Cheat Sheets', icon: <FileSpreadsheet className="w-5 h-5 text-purple-400" /> },
-    { id: 'rapid-practice', label: 'Rapid Flashcards', icon: <Zap className="w-5 h-5 text-amber-400" /> },
+    { id: 'tpo-portal', label: 'Placement TPO Hub', icon: <Award className="w-5 h-5 text-emerald-400" />, adminOnly: true },
     { id: 'resume-analyzer', label: 'Resume AI', icon: <FileText className="w-5 h-5 text-cyan-400" /> },
     { id: 'history', label: 'Interview History', icon: <History className="w-5 h-5 text-purple-400" /> },
     { id: 'admin', label: 'Admin Portal', icon: <ShieldCheck className="w-5 h-5 text-rose-400" />, adminOnly: true }
@@ -66,14 +62,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       {/* Drawer */}
       <aside
         className={`fixed top-0 left-0 z-50 h-full w-72 glass-panel border-r border-slate-800 p-6 flex flex-col justify-between transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+          isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
         <div className="space-y-6">
           {/* Top Logo & Close Button */}
           <div className="flex items-center justify-between">
             <div 
-              onClick={() => { setActiveTab('dashboard'); onClose(); }}
+              onClick={() => { 
+                setActiveTab('dashboard'); 
+                if (typeof window !== 'undefined' && window.innerWidth < 1024) onClose(); 
+              }}
               className="flex items-center gap-3 cursor-pointer group"
             >
               <div className="w-10 h-10 rounded-xl glow-gradient flex items-center justify-center shadow-lg shadow-violet-600/30 group-hover:scale-105 transition-transform">
@@ -87,9 +86,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
             <button
               onClick={onClose}
-              className="lg:hidden text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800"
+              title="Close Navigation Sidebar"
+              aria-label="Close Navigation Sidebar"
+              className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors flex items-center justify-center group"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-slate-400 group-hover:text-white" />
             </button>
           </div>
 
@@ -102,7 +103,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                   key={item.id}
                   onClick={() => {
                     setActiveTab(item.id);
-                    onClose();
+                    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                      onClose();
+                    }
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
@@ -115,6 +118,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 </button>
               );
             })}
+
+
           </nav>
         </div>
 

@@ -12,13 +12,13 @@ import {
   Target, 
   Award, 
   Briefcase, 
-  Zap, 
   Play, 
   ChevronDown, 
   ShieldCheck, 
   Clock, 
   UserCheck 
 } from 'lucide-react';
+import { InteractiveFeatureShowcase } from './InteractiveFeatureShowcase';
 
 export const LandingPage: React.FC = () => {
   const { setActiveTab, setAuthModalOpen, setAuthView, isAuthenticated } = useStore();
@@ -109,6 +109,9 @@ export const LandingPage: React.FC = () => {
             <span>Scan Resume for Target Role</span>
           </button>
         </div>
+
+        {/* Interactive Feature Showcase with Jobs & Skills, Study Abroad, Colleges & Companies */}
+        <InteractiveFeatureShowcase />
 
         {/* Key Metrics */}
         <div className="pt-8 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
@@ -231,12 +234,12 @@ export const LandingPage: React.FC = () => {
           </div>
 
           <div className="p-6 rounded-2xl glass-card border border-slate-800 space-y-4">
-            <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
-              <Zap className="w-6 h-6" />
+            <div className="w-12 h-12 rounded-xl bg-pink-600/20 border border-pink-500/30 flex items-center justify-center text-pink-400">
+              <Briefcase className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-white">Rapid 2-Min Flashcard Drills</h3>
+            <h3 className="text-lg font-bold text-white">Company OA Simulators</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Quick 3D flip card drills for System Design, Algorithms, and React Web Vitals with instant self-evaluation and +15 XP rewards.
+              Full-length timed assessments matching real recruitment drives for TCS, Infosys, Zoho, and Amazon SDE-1 roles.
             </p>
           </div>
         </div>
@@ -276,7 +279,7 @@ export const LandingPage: React.FC = () => {
                 'STAR Behavioral & Voice Speech Analytics',
                 'AI Line-by-Line Model Answers',
                 'Monaco Code Editor Sandbox Access',
-                'Rapid Flashcard Drills (+15 XP)'
+                'Company Test Pattern Cheat Sheets'
               ].map((feat, i) => (
                 <li key={i} className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -313,7 +316,7 @@ export const LandingPage: React.FC = () => {
                 'Unlimited AI Mock Interview Sessions',
                 'Priority Ultra-Fast AI Processing',
                 'Unlimited Resume AI Scans & Target Questions',
-                '1-on-1 AI Salary Negotiation Drills',
+                'Peer-to-Peer Mock Interview Rooms',
                 'Export Detailed Candidate Scorecards (PDF)'
               ].map((feat, i) => (
                 <li key={i} className="flex items-center gap-2">

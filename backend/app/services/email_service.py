@@ -38,7 +38,7 @@ class EmailService:
 
     def send_password_reset_email(self, recipient_email: str, reset_token: str):
         reset_link = f"http://localhost:5173/?reset_token={reset_token}"
-        subject = "🔐 Password Reset Request - InterviewAI Prime"
+        subject = "Password Reset Request - InterviewAI Prime"
         body = f"""
         Hello Candidate,
 
@@ -47,7 +47,7 @@ class EmailService:
         Click the link below to set a new password in your browser:
 
         ======================================================================
-        🔗  {reset_link}
+        LINK:  {reset_link}
         ======================================================================
 
         This reset link is valid for 15 MINUTES.
@@ -60,12 +60,15 @@ class EmailService:
         self._dispatch_email(recipient_email, subject, body, f"[PASSWORD RESET] Sent Reset Link to {recipient_email}: {reset_link}")
 
     def _dispatch_email(self, to_email: str, subject: str, body: str, log_message: str):
-        # Console output for zero-config testing
-        print("\n" + "="*70)
-        print(f"📧 EMAIL DISPATCH TO: {to_email}")
-        print(f"SUBJECT: {subject}")
-        print(body)
-        print("="*70 + "\n")
+        # Console output for zero-config testing (ASCII-safe for Windows cp1252)
+        try:
+            print("\n" + "="*70)
+            print(f"[EMAIL DISPATCH] TO: {to_email}")
+            print(f"SUBJECT: {subject}")
+            print(body)
+            print("="*70 + "\n")
+        except Exception:
+            pass
         
         logger.info(log_message)
 

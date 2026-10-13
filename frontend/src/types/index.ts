@@ -1,9 +1,9 @@
 export type NavTab = 
   | 'landing'
   | 'dashboard'
+  | 'roadmap'
   | 'setup'
   | 'live-session'
-  | 'rapid-practice'
   | 'report'
   | 'resume-analyzer'
   | 'question-bank'
@@ -13,7 +13,6 @@ export type NavTab =
   | 'tpo-portal'
   | 'certificates'
   | 'p2p-room'
-  | 'salary-negotiation'
   | 'company-cheatsheets'
   | 'history'
   | 'profile'
@@ -59,7 +58,40 @@ export interface UserProfile {
   planTier?: 'FREE STARTER' | 'PRO UNLIMITED';
   sessionsLeft?: number;
   monthlyQuota?: number;
+  onboardingCompleted?: boolean;
+  onboardingCompletedAt?: string;
+  onboardingStep?: number;
+  interviewDate?: string;
+  interviewDatePreset?: string;
+  targetCompany?: string;
+  resumeUrl?: string;
+  aptitudeAccuracy?: number;
 }
+
+export interface StudyPlanTask {
+  id: number;
+  week_number: number;
+  day_number: number;
+  title: string;
+  session_type: 'fundamentals' | 'dsa' | 'system_design' | 'star_behavioral' | 'mock_interview';
+  sessions_count: number;
+  status: 'pending' | 'done';
+  completed_at?: string;
+}
+
+export interface StudyPlan {
+  role: string;
+  experience_level: string;
+  weeks_count: number;
+  days_until_interview?: number;
+  interview_date?: string;
+  total_sessions: number;
+  remaining_monthly_sessions: number;
+  quota_capped: boolean;
+  quota_warning?: string;
+  tasks: StudyPlanTask[];
+}
+
 
 export interface QuestionItem {
   id: number;
@@ -96,6 +128,7 @@ export interface EvaluationResult {
   strengths: string[];
   improvements: string[];
   model_answer: string;
+  adaptive_followup_question?: string;
   filler_words_detected: number;
   wpm: number;
 }
@@ -111,4 +144,91 @@ export interface PastInterviewItem {
   hiring_recommendation: string;
   status: string;
   created_at: string;
+  technical_score?: number;
+  communication_score?: number;
+  behavioral_score?: number;
+  confidence_score?: number;
+  duration_minutes?: number;
+  question_count?: number;
+  strengths?: string[];
+  improvements?: string[];
+  average_wpm?: number;
+  total_fillers?: number;
+  questions?: any[];
+}
+
+export interface RoadmapResource {
+  title: string;
+  url: string;
+  type: string;
+}
+
+export interface RoadmapQuizQuestion {
+  question: string;
+  options: string[];
+  answer_index: number;
+  explanation: string;
+}
+
+export interface RoadmapTopic {
+  id: number;
+  phase_id: number;
+  topic_order: number;
+  title: string;
+  description: string;
+  learning_objectives?: string[];
+  prerequisites?: string[];
+  key_concepts?: string;
+  exercises?: string[];
+  resources?: (RoadmapResource | string)[];
+  assessment_quiz?: (RoadmapQuizQuestion | any)[];
+  practical_link_tab?: string;
+  practical_action_label?: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  quiz_score?: number | null;
+  is_verified?: boolean;
+  completed_at?: string | null;
+}
+
+export interface RoadmapPhase {
+  id: number;
+  roadmap_id: number;
+  phase_order: number;
+  title: string;
+  purpose: string;
+  estimated_weeks: number;
+  milestone_project?: string;
+  is_completed: boolean;
+  topics: RoadmapTopic[];
+  completed_topics_count: number;
+  total_topics_count: number;
+  progress_percentage: number;
+}
+
+export interface CareerRoadmap {
+  id: number;
+  user_id: number;
+  domain: string;
+  skill_level: string;
+  target_role: string;
+  study_time_daily: string;
+  learning_preference: string;
+  target_date?: string | null;
+  overall_progress: number;
+  status: string;
+  phases: RoadmapPhase[];
+  total_phases: number;
+  total_topics: number;
+  completed_topics: number;
+  current_phase_title?: string;
+  next_recommended_topic?: RoadmapTopic | null;
+}
+
+export interface RoadmapRecommendation {
+  roadmap_id: number;
+  recommended_topic: RoadmapTopic | null;
+  phase_title?: string | null;
+  reason: string;
+  prerequisites_met: boolean;
+  missing_prerequisites: string[];
 }

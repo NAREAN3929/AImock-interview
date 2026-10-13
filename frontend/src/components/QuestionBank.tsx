@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { TestInstructionModal } from './TestInstructionModal';
 import { CodeSandbox } from './CodeSandbox';
+import { generateCustomQuestionsApi } from '../services/api';
+import { CompanyCheatSheets } from './CompanyCheatSheets';
 import { 
   BookOpen, 
   Search, 
@@ -9,12 +11,21 @@ import {
   Play, 
   RotateCw, 
   Calendar,
-  Layers,
-  Terminal
+  Sparkles,
+  Loader2,
+  X,
+  PlusCircle,
+  Lightbulb,
+  Building2
 } from 'lucide-react';
 
-export const QuestionBank: React.FC = () => {
+interface QuestionBankProps {
+  initialTab?: 'coding-bank' | 'company-prep';
+}
+
+export const QuestionBank: React.FC<QuestionBankProps> = ({ initialTab = 'coding-bank' }) => {
   const { setActiveSession, setActiveTab } = useStore();
+  const [activeMainTab, setActiveMainTab] = useState<'coding-bank' | 'company-prep'>(initialTab);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -29,7 +40,15 @@ export const QuestionBank: React.FC = () => {
   const [showInstructionModal, setShowInstructionModal] = useState(false);
   const [targetQuestionForTest, setTargetQuestionForTest] = useState<any>(null);
 
-  const codingQuestionsList = [
+  // AI Generator Modal & State
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiTopic, setAiTopic] = useState('React & Next.js Performance');
+  const [aiCompany, setAiCompany] = useState('Google');
+  const [aiDifficulty, setAiDifficulty] = useState('Medium');
+  const [aiCount, setAiCount] = useState(2);
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+
+  const initialQuestions = [
     {
       id: 201 + (batchCount * 10),
       title: 'Two Sum & Target Index Pairs',
@@ -44,7 +63,7 @@ export const QuestionBank: React.FC = () => {
         { id: 2, input: 'nums = [3,2,4], target = 6', expected: '[1,2]' },
         { id: 3, input: 'nums = [3,3], target = 6', expected: '[0,1]' }
       ],
-      code_template: `function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const diff = target - nums[i];\n    if (map.has(diff)) {\n      return [map.get(diff), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}`,
+      code_template: `function twoSum(nums, target) {\n  // TODO: Write your algorithm here to achieve O(N) time complexity\n  \n  return [];\n}`,
       expected_keywords: ['Hash Map', 'O(N) Time', 'Array Indexing']
     },
     {
@@ -61,7 +80,7 @@ export const QuestionBank: React.FC = () => {
         { id: 2, input: '"(]"', expected: 'false' },
         { id: 3, input: '"{[]}"', expected: 'true' }
       ],
-      code_template: `function isValid(s) {\n  const stack = [];\n  const pairs = { ')': '(', '}': '{', ']': '[' };\n  for (let char of s) {\n    if (pairs[char]) {\n      if (stack.pop() !== pairs[char]) return false;\n    } else {\n      stack.push(char);\n    }\n  }\n  return stack.length === 0;\n}`,
+      code_template: `function isValid(s) {\n  // TODO: Determine if parentheses string is valid using a Stack\n  \n  return false;\n}`,
       expected_keywords: ['Stack', 'Matching Pairs', 'LIFO']
     },
     {
@@ -78,7 +97,7 @@ export const QuestionBank: React.FC = () => {
         { id: 2, input: '"bbbbb"', expected: '1' },
         { id: 3, input: '"pwwkew"', expected: '3' }
       ],
-      code_template: `function lengthOfLongestSubstring(s) {\n  let set = new Set();\n  let left = 0, maxLen = 0;\n  for (let right = 0; right < s.length; right++) {\n    while (set.has(s[right])) {\n      set.delete(s[left]);\n      left++;\n    }\n    set.add(s[right]);\n    maxLen = Math.max(maxLen, right - left + 1);\n  }\n  return maxLen;\n}`,
+      code_template: `function lengthOfLongestSubstring(s) {\n  // TODO: Find length of longest substring without repeating characters\n  \n  return 0;\n}`,
       expected_keywords: ['Sliding Window', 'Set', 'O(N) Time']
     },
     {
@@ -94,12 +113,54 @@ export const QuestionBank: React.FC = () => {
     }
   ];
 
-  const filteredQuestions = codingQuestionsList.filter(q => {
+  const [questionsList, setQuestionsList] = useState<any[]>(initialQuestions);
+
+  const handleGenerateWithGemini = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsAiGenerating(true);
+
+    try {
+      const response = await generateCustomQuestionsApi({
+        role: 'Software Engineer',
+        company: aiCompany,
+        difficulty: aiDifficulty,
+        topic: aiTopic,
+        count: aiCount
+      });
+
+      if (response && response.questions && response.questions.length > 0) {
+        const mapped = response.questions.map((q: any, i: number) => ({
+          id: Date.now() + i,
+          title: q.question_text.slice(0, 48) + (q.question_text.length > 48 ? '...' : ''),
+          platform: 'Gemini AI Live',
+          company: aiCompany,
+          category: q.category || 'Algorithms',
+          difficulty: aiDifficulty,
+          type: q.code_template ? 'code' : 'text',
+          question_text: q.question_text,
+          expected_keywords: q.expected_keywords || ['Gemini Generated', aiTopic],
+          code_template: q.code_template || `// Solution for ${aiTopic}\nfunction solve() {\n  // Implement logic here\n}`,
+          testCases: q.test_cases || [
+            { id: 1, input: 'Standard Test Input', expected: 'Optimal Output' }
+          ]
+        }));
+
+        setQuestionsList(prev => [...mapped, ...prev]);
+        setShowAiModal(false);
+      }
+    } catch (err) {
+      console.error('Failed to generate questions with Gemini', err);
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
+
+  const filteredQuestions = questionsList.filter(q => {
     const matchesSearch = q.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           q.question_text.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           q.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          q.platform.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'All' || q.category.includes(selectedCategory);
+                          (q.expected_keywords && q.expected_keywords.some((k: string) => k.toLowerCase().includes(searchQuery.toLowerCase())));
+    const matchesCategory = selectedCategory === 'All' || q.category.toLowerCase().includes(selectedCategory.toLowerCase());
     return matchesSearch && matchesCategory;
   });
 
@@ -147,12 +208,43 @@ export const QuestionBank: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8 animate-fade-in">
       
-      {/* Header with 10-Day Question Refresh Schedule */}
+      {/* Top Main Navigation Tabs: Coding Bank vs Company Preparation */}
+      <div className="flex items-center gap-3 border-b border-slate-800 pb-4">
+        <button
+          onClick={() => setActiveMainTab('coding-bank')}
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+            activeMainTab === 'coding-bank'
+              ? 'bg-violet-600 text-white shadow-lg shadow-violet-600/30 border border-violet-500 scale-105'
+              : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Code2 className="w-4 h-4" />
+          <span>Coding Practice Bank</span>
+        </button>
+
+        <button
+          onClick={() => setActiveMainTab('company-prep')}
+          className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+            activeMainTab === 'company-prep'
+              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/30 border border-cyan-500 scale-105'
+              : 'bg-slate-900/80 border border-slate-800 text-slate-400 hover:text-white'
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          <span>Company Preparation & Cheat Sheets</span>
+        </button>
+      </div>
+
+      {activeMainTab === 'company-prep' ? (
+        <CompanyCheatSheets onSwitchToCoding={() => setActiveMainTab('coding-bank')} />
+      ) : (
+        <>
+          {/* Header with 10-Day Question Refresh Schedule & Gemini Generator */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl glass-panel border border-violet-500/30">
         <div className="space-y-1">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-violet-300 text-xs font-semibold">
             <BookOpen className="w-4 h-4 text-violet-400" />
-            <span>LeetCode, CodeChef & GitHub Question Bank</span>
+            <span>LeetCode, CodeChef & Gemini AI Question Engine</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">Practice Real Coding & Architecture Problems</h1>
           <p className="text-xs text-slate-400">
@@ -160,16 +252,24 @@ export const QuestionBank: React.FC = () => {
           </p>
         </div>
 
-        {/* 10-Day Auto Refresh Schedule Pill */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center flex-wrap gap-3">
+          <button
+            onClick={() => setShowAiModal(true)}
+            className="px-4 py-2 rounded-xl glow-gradient text-white text-xs font-bold shadow-lg shadow-violet-600/30 hover:scale-105 transition-all flex items-center gap-2"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+            <span>Generate with Gemini AI</span>
+          </button>
+
           <div className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center gap-2 text-xs font-mono text-cyan-400 shadow-inner">
             <Calendar className="w-4 h-4 text-cyan-400" />
-            <span>Rotates Every 10 Days (Next: {daysRemaining}d {hoursRemaining}h)</span>
+            <span>Rotates (Next: {daysRemaining}d {hoursRemaining}h)</span>
           </div>
 
           <button
             onClick={() => setBatchCount(b => b + 1)}
             className="p-2.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/40 text-violet-300 text-xs font-bold transition-colors flex items-center gap-1.5"
+            title="Cycle next batch"
           >
             <RotateCw className="w-4 h-4" />
             <span>Batch #{batchCount + 1}</span>
@@ -191,7 +291,7 @@ export const QuestionBank: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-          {['All', 'Algorithms', 'System'].map((cat) => (
+          {['All', 'Algorithms', 'System', 'Gemini AI'].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -258,7 +358,7 @@ export const QuestionBank: React.FC = () => {
 
               <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
                 <div className="flex flex-wrap gap-1">
-                  {q.expected_keywords.map((kw, i) => (
+                  {q.expected_keywords && q.expected_keywords.map((kw: string, i: number) => (
                     <span key={i} className="px-2 py-0.5 rounded bg-slate-900 text-[10px] font-mono text-slate-400">
                       #{kw}
                     </span>
@@ -276,7 +376,7 @@ export const QuestionBank: React.FC = () => {
                       }`}
                     >
                       <Code2 className="w-3.5 h-3.5" />
-                      <span>{isSandboxOpen ? 'Close Compiler' : 'Open LeetCode Compiler'}</span>
+                      <span>{isSandboxOpen ? 'Close Compiler' : 'Open Compiler'}</span>
                     </button>
                   )}
 
@@ -294,6 +394,112 @@ export const QuestionBank: React.FC = () => {
         })}
       </div>
 
+      {/* Gemini AI Generator Modal */}
+      {showAiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#0e1322] border border-violet-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full space-y-6 shadow-2xl relative">
+            <button
+              onClick={() => setShowAiModal(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-1">
+              <div className="inline-flex items-center gap-2 px-3 py-0.5 rounded-full bg-violet-500/20 text-violet-300 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Google Gemini API</span>
+              </div>
+              <h2 className="text-xl font-bold text-white">Generate Custom Questions</h2>
+              <p className="text-xs text-slate-400">
+                Enter your target tech stack or domain. Gemini will formulate tailored questions with code starters & test cases.
+              </p>
+            </div>
+
+            <form onSubmit={handleGenerateWithGemini} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Topic / Technology Focus</label>
+                <input
+                  type="text"
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  placeholder="e.g. React Hooks, Docker & K8s, PostgreSQL indexing"
+                  className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-violet-500 focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Target Company</label>
+                  <input
+                    type="text"
+                    value={aiCompany}
+                    onChange={(e) => setAiCompany(e.target.value)}
+                    placeholder="e.g. Google, Amazon, Zoho"
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-violet-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Difficulty</label>
+                  <select
+                    value={aiDifficulty}
+                    onChange={(e) => setAiDifficulty(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-white text-xs focus:border-violet-500 focus:outline-none"
+                  >
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">Question Count</label>
+                <div className="flex gap-3">
+                  {[1, 2, 3, 5].map(cnt => (
+                    <button
+                      key={cnt}
+                      type="button"
+                      onClick={() => setAiCount(cnt)}
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${
+                        aiCount === cnt
+                          ? 'bg-violet-600 text-white border-violet-500'
+                          : 'bg-slate-950 text-slate-400 border-slate-800'
+                      }`}
+                    >
+                      {cnt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isAiGenerating || !aiTopic.trim()}
+                className="w-full py-3.5 rounded-2xl glow-gradient text-white text-xs font-bold shadow-xl shadow-violet-600/30 flex items-center justify-center gap-2 disabled:opacity-50 hover:scale-[1.01] transition-transform"
+              >
+                {isAiGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Generating via Gemini AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 text-amber-300" />
+                    <span>Generate & Add to Question Bank</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
+  )}
+
       {/* Full Pattern Pre-Test Instruction Popup */}
       <TestInstructionModal
         isOpen={showInstructionModal}
@@ -304,4 +510,3 @@ export const QuestionBank: React.FC = () => {
     </div>
   );
 };
-

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { NavTab, UserProfile, InterviewSession, EvaluationResult, PastInterviewItem } from '../types';
+import { NavTab, UserProfile, InterviewSession, EvaluationResult, PastInterviewItem, StudyPlan, StudyPlanTask } from '../types';
 
 interface AppState {
   activeTab: NavTab;
@@ -33,6 +33,17 @@ interface AppState {
   setPastInterviews: (interviews: PastInterviewItem[]) => void;
   addPastInterview: (item: PastInterviewItem) => void;
 
+  // Study Plan State
+  studyPlan: StudyPlan | null;
+  setStudyPlan: (plan: StudyPlan | null) => void;
+  updateStudyPlanTaskStatus: (taskId: number, status: 'pending' | 'done') => void;
+
+  // Onboarding Modal State
+  isOnboardingModalOpen: boolean;
+  setOnboardingModalOpen: (open: boolean) => void;
+  onboardingStep: number;
+  setOnboardingStep: (step: number) => void;
+
   // Modals & Auth Views
   isAuthModalOpen: boolean;
   setAuthModalOpen: (open: boolean) => void;
@@ -44,6 +55,11 @@ interface AppState {
   setPendingEmailForOtp: (email: string) => void;
   resetTokenFromUrl: string;
   setResetTokenFromUrl: (token: string) => void;
+
+  // Multi-Theme System
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
 }
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000; // 432,000,000 ms
@@ -51,6 +67,20 @@ const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000; // 432,000,000 ms
 export const useStore = create<AppState>()(
   persist(
     (set, get) => ({
+      // Theme default: dark theme as default, persisted
+      theme: 'dark',
+      setTheme: (newTheme) => {
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('interviewai-theme', newTheme);
+        set({ theme: newTheme });
+      },
+      toggleTheme: () => {
+        const next = get().theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('interviewai-theme', next);
+        set({ theme: next });
+      },
+
       activeTab: 'landing',
       setActiveTab: (tab) => set({ activeTab: tab, isAptitudeTestActive: tab === 'aptitude' ? get().isAptitudeTestActive : false }),
 
@@ -148,20 +178,142 @@ export const useStore = create<AppState>()(
       pastInterviews: [
         {
           id: 901,
-          title: 'Senior Software Engineer Mock (Google)',
-          role: 'Software Engineer',
+          title: 'Staff Full-Stack & Distributed Systems Mock',
+          role: 'Full-Stack Engineer',
           company: 'Google',
           difficulty: 'Senior',
           interview_type: 'Technical & System Design',
-          overall_score: 88.5,
+          overall_score: 92.5,
+          technical_score: 95.0,
+          communication_score: 90.0,
+          behavioral_score: 88.0,
+          confidence_score: 92.0,
           hiring_recommendation: 'Strong Hire',
           status: 'completed',
-          created_at: new Date(Date.now() - 86400000 * 2).toISOString()
+          duration_minutes: 24,
+          question_count: 4,
+          average_wpm: 142,
+          total_fillers: 2,
+          strengths: [
+            'Exceptional cache invalidation & horizontal scaling architecture',
+            'Flawless Big-O complexity explanation and time bounds',
+            'Crisp, executive-level communication pace'
+          ],
+          improvements: [
+            'Explore data partitioning trade-offs before locking in sharding key'
+          ],
+          created_at: new Date(Date.now() - 86400000 * 1).toISOString()
+        },
+        {
+          id: 902,
+          title: 'SDE-2 Distributed Cloud & LP Leadership Round',
+          role: 'Software Development Engineer II',
+          company: 'Amazon',
+          difficulty: 'Medium',
+          interview_type: 'Technical & STAR Behavioral',
+          overall_score: 86.0,
+          technical_score: 88.0,
+          communication_score: 84.0,
+          behavioral_score: 89.0,
+          confidence_score: 85.0,
+          hiring_recommendation: 'Hire',
+          status: 'completed',
+          duration_minutes: 18,
+          question_count: 3,
+          average_wpm: 136,
+          total_fillers: 5,
+          strengths: [
+            'Deep adherence to Amazon Leadership Principles (Customer Obsession, Ownership)',
+            'Strong asynchronous event pipeline structure'
+          ],
+          improvements: [
+            'Articulate measurable business impact metrics earlier in the STAR action'
+          ],
+          created_at: new Date(Date.now() - 86400000 * 3).toISOString()
+        },
+        {
+          id: 903,
+          title: 'Frontend Architecture & React Performance Lab',
+          role: 'Frontend Engineer',
+          company: 'Meta',
+          difficulty: 'Hard',
+          interview_type: 'Technical & Live Coding',
+          overall_score: 89.5,
+          technical_score: 93.0,
+          communication_score: 87.0,
+          behavioral_score: 85.0,
+          confidence_score: 90.0,
+          hiring_recommendation: 'Strong Hire',
+          status: 'completed',
+          duration_minutes: 22,
+          question_count: 4,
+          average_wpm: 139,
+          total_fillers: 3,
+          strengths: [
+            'Rapid identification of React render lifecycles & DOM reconciliation',
+            'Strong accessibility (WCAG AA) & responsive design intuition'
+          ],
+          improvements: [
+            'Discuss web vitals (INP/LCP) impact on heavy re-render cycles'
+          ],
+          created_at: new Date(Date.now() - 86400000 * 6).toISOString()
+        },
+        {
+          id: 904,
+          title: 'Microservices Resiliency & Fault Tolerance Deep-Dive',
+          role: 'Backend Platform Engineer',
+          company: 'Netflix',
+          difficulty: 'Senior',
+          interview_type: 'System Design & High Concurrency',
+          overall_score: 79.0,
+          technical_score: 82.0,
+          communication_score: 76.0,
+          behavioral_score: 80.0,
+          confidence_score: 78.0,
+          hiring_recommendation: 'Lean Hire',
+          status: 'completed',
+          duration_minutes: 20,
+          question_count: 3,
+          average_wpm: 128,
+          total_fillers: 8,
+          strengths: [
+            'Solid comprehension of circuit breakers and retry storm mitigation'
+          ],
+          improvements: [
+            'Maintain steadier speaking pace during complex algorithmic explanations',
+            'Reduce conversational pause fillers when formulating thoughts'
+          ],
+          created_at: new Date(Date.now() - 86400000 * 10).toISOString()
         }
       ],
       setPastInterviews: (interviews) => set({ pastInterviews: interviews }),
       addPastInterview: (item) =>
         set((state) => ({ pastInterviews: [item, ...state.pastInterviews] })),
+
+      // Study Plan state
+      studyPlan: null,
+      setStudyPlan: (plan) => set({ studyPlan: plan }),
+      updateStudyPlanTaskStatus: (taskId, status) =>
+        set((state) => {
+          if (!state.studyPlan) return state;
+          const updatedTasks = state.studyPlan.tasks.map((t) =>
+            t.id === taskId
+              ? { ...t, status, completed_at: status === 'done' ? new Date().toISOString() : undefined }
+              : t
+          );
+          return {
+            studyPlan: {
+              ...state.studyPlan,
+              tasks: updatedTasks
+            }
+          };
+        }),
+
+      // Onboarding Modal state
+      isOnboardingModalOpen: false,
+      setOnboardingModalOpen: (open) => set({ isOnboardingModalOpen: open }),
+      onboardingStep: 1,
+      setOnboardingStep: (step) => set({ onboardingStep: step }),
 
       isAuthModalOpen: false,
       setAuthModalOpen: (open) => set({ isAuthModalOpen: open }),

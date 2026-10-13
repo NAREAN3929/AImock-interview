@@ -22,6 +22,7 @@ from app.services.email_service import email_service
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/signup")
+@router.post("/register")
 def signup(user_in: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter((User.email == user_in.email) | (User.username == user_in.username)).first()
     if db_user:
@@ -121,8 +122,9 @@ def resend_otp(req: ResendOTPRequest, db: Session = Depends(get_db)):
 
 @router.post("/login", response_model=Token)
 def login(login_in: UserLogin, db: Session = Depends(get_db)):
+    identifier = login_in.identifier
     user = db.query(User).filter(
-        (User.username == login_in.username_or_email) | (User.email == login_in.username_or_email)
+        (User.username == identifier) | (User.email == identifier)
     ).first()
     
     if not user or not verify_password(login_in.password, user.hashed_password):
@@ -185,8 +187,9 @@ def reset_password(req: ResetPasswordWithTokenRequest, db: Session = Depends(get
 
 @router.post("/change-password")
 def change_password(req: ChangePasswordRequest, db: Session = Depends(get_db)):
+    identifier = (req.email_or_username or req.email or "").strip()
     user = db.query(User).filter(
-        (User.username == req.email_or_username) | (User.email == req.email_or_username)
+        (User.username == identifier) | (User.email == identifier)
     ).first()
 
     if not user:

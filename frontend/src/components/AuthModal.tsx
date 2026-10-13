@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
-import { signupApi, verifyOtpApi, resendOtpApi, loginApi, forgotPasswordApi, resetPasswordApi } from '../services/api';
+import { signupApi, verifyOtpApi, resendOtpApi, loginApi, forgotPasswordApi, resetPasswordApi, getOnboardingStatusApi } from '../services/api';
 import { X, Sparkles, Lock, Mail, User, Clock, ArrowLeft, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
@@ -13,7 +13,8 @@ export const AuthModal: React.FC = () => {
     setPendingEmailForOtp,
     resetTokenFromUrl,
     setIsAuthenticated,
-    updateUserProfile
+    updateUserProfile,
+    setOnboardingModalOpen
   } = useStore();
 
   const [email, setEmail] = useState('');
@@ -180,6 +181,11 @@ export const AuthModal: React.FC = () => {
         monthlyQuota: 10
       });
       setSuccessMessage('Logged in successfully as Candidate!');
+      getOnboardingStatusApi('c1@gmail.com').then((st) => {
+        if (st && !st.onboarding_completed) {
+          setOnboardingModalOpen(true);
+        }
+      });
       setTimeout(() => {
         handleCloseModal();
       }, 600);
@@ -205,13 +211,19 @@ export const AuthModal: React.FC = () => {
 
     try {
       const res = await loginApi(email || username, password);
+      const userEmail = email || 'candidate@interview.ai';
       setIsAuthenticated(true);
       updateUserProfile({ 
-        email: email || 'candidate@interview.ai', 
+        email: userEmail, 
         username: res.username || username || 'candidate', 
         fullName: fullName || res.username || 'Candidate User' 
       });
       setSuccessMessage('Logged in successfully!');
+      getOnboardingStatusApi(userEmail).then((st) => {
+        if (st && !st.onboarding_completed) {
+          setOnboardingModalOpen(true);
+        }
+      });
       setTimeout(() => {
         handleCloseModal();
       }, 600);

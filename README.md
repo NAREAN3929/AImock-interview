@@ -1,9 +1,9 @@
 # 🚀 AI Mock Interview Platform ("InterviewAI Prime")
 
-A complete, production-ready, full-stack AI Mock Interview Platform built with React 19, TypeScript, Tailwind CSS, Python FastAPI, MySQL, SQLAlchemy, and Google Gemini API.
+A complete, production-ready, full-stack AI Mock Interview Platform built with HTML5, Tailwind CSS, FastAPI, MySQL, and Google Gemini API.
 
 ![Platform Screenshot](https://img.shields.io/badge/AI-Mock%20Interview-8b5cf6?style=for-the-badge)
-![Tech Stack](https://img.shields.io/badge/Stack-React%20%7C%20FastAPI%20%7C%20MySQL%20%7C%20Gemini-06b6d4?style=for-the-badge)
+![Tech Stack](https://img.shields.io/badge/Stack-HTML5%20%7C%20FastAPI%20%7C%20MySQL%20%7C%20Gemini-06b6d4?style=for-the-badge)
 
 ---
 
@@ -16,7 +16,7 @@ A complete, production-ready, full-stack AI Mock Interview Platform built with R
    - Real-time filler word detection ("um", "uh", "like", "basically").
 
 2. **💻 Technical Coding Sandbox**
-   - Code editor supporting JavaScript, Python, Java, and C++.
+   - Code editor supporting multiple programming languages (JavaScript, Java, C++, and more).
    - Test case execution simulation and complexity analysis.
 
 3. **🏢 Company-Specific & Role Customization**
@@ -39,7 +39,7 @@ A complete, production-ready, full-stack AI Mock Interview Platform built with R
 
 7. **🗄️ MySQL Relational Database**
    - Normalized schema (`users`, `profiles`, `interviews`, `questions`, `answers`, `resumes`, `admin_logs`).
-   - PyMySQL driver + SQLAlchemy ORM with resilient connection pooling and automatic local fallback.
+   - Resilient database connection pooling with automatic local fallback.
 
 ---
 
@@ -56,8 +56,8 @@ docker-compose up --build
 #### 1. Backend Setup
 ```bash
 cd backend
-py -m pip install -r requirements.txt
-py main.py
+pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 Backend runs at: `http://localhost:8000` (Swagger API Docs at `http://localhost:8000/docs`)
 
