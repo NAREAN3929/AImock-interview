@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '../store/useStore';
-import { analyzeResumeApi } from '../services/api';
+import { analyzeResumeApi, uploadResumeFileApi } from '../services/api';
 import { FileText, Sparkles, CheckCircle2, AlertCircle, Play, Loader2, Upload, File, Trash2, Zap } from 'lucide-react';
 
 export const ResumeAnalyzer: React.FC = () => {
   const { setActiveSession, setActiveTab } = useStore();
   const [resumeText, setResumeText] = useState('');
   const [targetRole, setTargetRole] = useState('Data Engineer');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [uploadedFileSize, setUploadedFileSize] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,34 +31,42 @@ EXPERIENCE:
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadedFile(file);
     setUploadedFileName(file.name);
     setUploadedFileSize(`${(file.size / 1024).toFixed(1)} KB`);
 
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const content = evt.target?.result as string;
-      if (content && content.length > 10) {
-        setResumeText(content);
-      } else {
-        // If binary PDF/JPG, provide extracted resume representation
-        setResumeText(`[EXTRACTED FROM DOCUMENT: ${file.name}]\nRole: ${targetRole}\nSkills Extracted: Python, SQL, Cloud Architecture, Microservices, API Development, System Optimization.`);
-      }
-    };
-    reader.readAsText(file);
+    if (file.name.toLowerCase().endsWith('.txt')) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const content = evt.target?.result as string;
+        if (content && content.length > 10) {
+          setResumeText(content);
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      setResumeText(`[Binary File Attached: ${file.name}]\n\nContents will be extracted automatically on the server during analysis.`);
+    }
   };
 
   const handleClearFile = () => {
+    setUploadedFile(null);
     setUploadedFileName(null);
     setUploadedFileSize(null);
     setResumeText('');
   };
 
   const handleAnalyze = async () => {
-    if (!resumeText.trim()) return;
+    if (!resumeText.trim() && !uploadedFile) return;
 
     setLoading(true);
     try {
-      const result = await analyzeResumeApi(resumeText, targetRole);
+      let result;
+      if (uploadedFile) {
+        result = await uploadResumeFileApi(uploadedFile, targetRole);
+      } else {
+        result = await analyzeResumeApi(resumeText, targetRole);
+      }
       setAnalysisResult(result);
     } catch (err) {
       console.error('Resume analysis failed', err);
@@ -65,6 +74,7 @@ EXPERIENCE:
       setLoading(false);
     }
   };
+
 
   const handleLaunchTargetSession = () => {
     if (!analysisResult) return;

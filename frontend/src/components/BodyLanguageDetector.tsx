@@ -29,6 +29,23 @@ export const BodyLanguageDetector: React.FC<BodyLanguageProps> = ({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  const [isMediaPipeLoaded, setIsMediaPipeLoaded] = useState(false);
+
+  // Dynamically load MediaPipe FaceMesh library script from CDN
+  useEffect(() => {
+    let script: HTMLScriptElement | null = null;
+    if (!(window as any).FaceMesh) {
+      script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js';
+      script.async = true;
+      script.onload = () => setIsMediaPipeLoaded(true);
+      script.onerror = () => setIsMediaPipeLoaded(false);
+      document.body.appendChild(script);
+    } else {
+      setIsMediaPipeLoaded(true);
+    }
+  }, []);
+
   // Safely stop webcam tracks
   const stopWebcam = useCallback(() => {
     if (streamRef.current) {

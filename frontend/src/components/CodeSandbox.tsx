@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Play, CheckCircle2, XCircle, AlertTriangle, Code2, Terminal, Check, Layers, RotateCcw } from 'lucide-react';
+import { Play, CheckCircle2, XCircle, AlertTriangle, Code2, Terminal, Check, Layers, RotateCcw, FileCode } from 'lucide-react';
 
 export interface TestCase {
   id: number;
@@ -389,6 +389,8 @@ export const CodeSandbox: React.FC<CodeSandboxProps> = ({
       }
     }, 500);
   };
+
+
 
   const handleLanguageChange = (lang: 'javascript' | 'python' | 'cpp' | 'java') => {
     setLanguage(lang);

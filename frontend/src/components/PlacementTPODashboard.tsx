@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../store/useStore';
+import { getTpoOverviewApi } from '../services/api';
 import { GraduationCap, Users, Award, TrendingUp, Send, FileSpreadsheet, CheckCircle2, Search, Filter, Mail, Calendar, X } from 'lucide-react';
 
 export const PlacementTPODashboard: React.FC = () => {
@@ -8,6 +9,16 @@ export const PlacementTPODashboard: React.FC = () => {
   const [selectedYear, setSelectedYear] = useState('2026');
   const [selectedMonth, setSelectedMonth] = useState('All');
   const [assignedSuccess, setAssignedSuccess] = useState(false);
+  const [tpoData, setTpoData] = useState<any>(null);
+
+  useEffect(() => {
+    getTpoOverviewApi().then((data) => {
+      setTpoData(data);
+    }).catch((err) => {
+      console.warn('TPO API warning:', err);
+    });
+  }, []);
+
 
   const studentRankings = [
     { rank: 1, name: 'Aravind Kumar', dept: 'CSE', score: 98, aptitude: 96, coding: 100, status: 'TCS & Amazon Ready', joinedPeriod: 'Jul 2026', sessions: 9 },
