@@ -1,7 +1,32 @@
-# GitHub Linguist Language Override
-# Hides TypeScript and frontend files from GitHub repository language stats, highlighting Python
+# GitHub Linguist Language Configuration
+# Configures the GitHub repository Languages statistics bar
 
+# 1. Hide TypeScript completely
 *.ts linguist-detectable=false
-*.tsx linguist-detectable=false
-frontend/** linguist-detectable=false
-frontend/** linguist-vendored=true
+
+# 2. Map TSX components and templates to HTML so HTML appears prominently in Languages bar
+*.tsx linguist-language=HTML
+*.tsx linguist-detectable=true
+*.html linguist-detectable=true
+*.html linguist-language=HTML
+
+# 3. Detect CSS styling
+*.css linguist-detectable=true
+*.css linguist-language=CSS
+
+# 4. Detect SQL (MySQL Database Schema)
+*.sql linguist-detectable=true
+*.sql linguist-language=SQL
+
+# 5. Detect Python backend
+*.py linguist-detectable=true
+*.py linguist-language=Python
+
+# 6. Exclude build artifacts, package configs, and scripts
+dist/** linguist-vendored=true
+node_modules/** linguist-vendored=true
+*.json linguist-detectable=false
+*.bat linguist-detectable=false
+*.cmd linguist-detectable=false
+*.svg linguist-detectable=false
+*.md linguist-documentation=true
