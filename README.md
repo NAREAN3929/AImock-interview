@@ -1,13 +1,22 @@
 # 🚀 AI Mock Interview Platform ("InterviewAI Prime")
 
-A complete, production-ready, full-stack AI Mock Interview Platform built with Python (FastAPI), Google Gemini AI, MySQL, and Web Standards.
+A complete, production-ready, full-stack AI Mock Interview Platform built with HTML5, CSS3, MySQL, and Google Gemini AI.
 
-![Primary Language](https://img.shields.io/badge/Language-Python%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![AI Engine](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![Backend Framework](https://img.shields.io/badge/Framework-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![Database](https://img.shields.io/badge/Database-MySQL%208.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Google Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-8E75C4?style=for-the-badge&logo=google&logoColor=white)
 
 ---
+
+## 🛠️ Core Technology Stack
+
+| Technology | Purpose |
+| :--- | :--- |
+| **HTML5** | Semantic structure, accessible interview forms, canvas visualizers & media containers |
+| **CSS3** | Responsive layouts, glassmorphism design system, dark mode & smooth micro-animations |
+| **MySQL** | Relational database schema, candidate profiles, interview logs & analytics persistence |
+| **AI Gemini** | Real-time question generation, STAR behavioral scoring & technical code evaluation |
 
 ## 🌟 Key Features
 
@@ -87,7 +96,7 @@ SECRET_KEY=your_super_secret_jwt_key
 ---
 
 ## 🛠️ GitHub Repository Language Configuration
-To highlight the core Python & FastAPI AI engine as the primary repository language on GitHub, frontend assets are configured with `linguist-detectable=false` in `.gitattributes`.
+To highlight the core application technologies (**HTML, CSS, MySQL, and AI Gemini**) on GitHub, frontend build files are configured with `linguist-detectable=false` in `.gitattributes` to hide TypeScript stats from the repository summary.
 
 ---
 
