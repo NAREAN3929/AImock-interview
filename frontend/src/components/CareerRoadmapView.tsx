@@ -197,7 +197,11 @@ export const CareerRoadmapView: React.FC<CareerRoadmapViewProps> = ({ onNavigate
         loadRecommendation(res.id);
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to generate roadmap. Please try again.');
+      const isNetworkErr = err.message === 'Failed to fetch' || err.message?.includes('NetworkError');
+      const msg = isNetworkErr
+        ? 'Cannot connect to backend server at http://localhost:8000. Please ensure the backend is running.'
+        : (err.message || 'Failed to generate roadmap. Please try again.');
+      setErrorMessage(msg);
     } finally {
       setGenerating(false);
     }
@@ -451,9 +455,17 @@ export const CareerRoadmapView: React.FC<CareerRoadmapViewProps> = ({ onNavigate
           </div>
 
           {errorMessage && (
-            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-3">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              <span>{errorMessage}</span>
+            <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-400" />
+                <span>{errorMessage}</span>
+              </div>
+              <button
+                type="submit"
+                className="px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shrink-0 transition-colors"
+              >
+                Retry
+              </button>
             </div>
           )}
 

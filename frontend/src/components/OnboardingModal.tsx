@@ -473,7 +473,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between select-none outline-none focus-visible:ring-2 focus-visible:ring-violet-500 ${
                             isSelected
                               ? 'bg-violet-600/15 border-violet-500 text-violet-300 font-bold shadow-md'
-                              : 'bg-[var(--line)]/25 border-[var(--line)] hover:border-violet-500/40 text-[var(--text)]'
+                              : 'bg-slate-800/40 border-slate-700/60 hover:border-violet-500/40 text-[var(--text)]'
                           }`}
                         >
                           <span className="text-sm">{role}</span>
@@ -492,7 +492,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                       className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between select-none outline-none focus-visible:ring-2 focus-visible:ring-violet-500 sm:col-span-2 ${
                         isOtherRole
                           ? 'bg-violet-600/15 border-violet-500 text-violet-300 font-bold shadow-md'
-                          : 'bg-[var(--line)]/25 border-[var(--line)] hover:border-violet-500/40 text-[var(--text)]'
+                          : 'bg-slate-800/40 border-slate-700/60 hover:border-violet-500/40 text-[var(--text)]'
                       }`}
                     >
                       <span className="text-sm">Other Specialized Role</span>
@@ -507,7 +507,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         value={otherRoleText}
                         onChange={(e) => setOtherRoleText(e.target.value)}
                         placeholder="E.g., DevOps Engineer, Machine Learning Engineer, iOS Developer..."
-                        className="w-full px-4 py-3 bg-[var(--line)]/30 border border-[var(--line)] rounded-xl text-xs text-[var(--text)] focus:border-violet-500 focus:outline-none"
+                        className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500/40 transition-all shadow-inner"
                         autoFocus
                       />
                     </div>
@@ -542,7 +542,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between select-none outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 ${
                             isSelected
                               ? 'bg-cyan-500/15 border-cyan-400 text-cyan-300 font-bold shadow-md'
-                              : 'bg-[var(--line)]/25 border-[var(--line)] hover:border-cyan-500/40 text-[var(--text)]'
+                              : 'bg-slate-800/40 border-slate-700/60 hover:border-cyan-500/40 text-[var(--text)]'
                           }`}
                         >
                           <div>
@@ -588,7 +588,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-center justify-between select-none outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 ${
                             isSelected
                               ? 'bg-emerald-500/15 border-emerald-400 text-emerald-300 font-bold shadow-md'
-                              : 'bg-[var(--line)]/25 border-[var(--line)] hover:border-emerald-500/40 text-[var(--text)]'
+                              : 'bg-slate-800/40 border-slate-700/60 hover:border-emerald-500/40 text-[var(--text)]'
                           }`}
                         >
                           <div>
@@ -611,7 +611,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         min={new Date().toISOString().split('T')[0]}
                         value={customDate}
                         onChange={(e) => setCustomDate(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-[var(--line)]/30 border border-[var(--line)] rounded-xl text-xs text-[var(--text)] focus:border-emerald-500 focus:outline-none"
+                        className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500/40 transition-all"
                       />
                     </div>
                   )}
@@ -644,7 +644,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                         setTargetCompany(e.target.value);
                       }}
                       placeholder="Type company name (e.g., Google, Amazon, Zoho)..."
-                      className="w-full px-4 py-2.5 bg-[var(--line)]/30 border border-[var(--line)] rounded-xl text-xs text-[var(--text)] focus:border-amber-500 focus:outline-none"
+                      className="w-full px-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder:text-slate-400 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition-all shadow-inner"
                     />
 
                     {/* Quick popular chips */}
@@ -660,7 +660,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all ${
                             targetCompany === comp
                               ? 'bg-amber-500/20 border-amber-400 text-amber-300'
-                              : 'bg-[var(--line)]/20 border-[var(--line)] text-[var(--mute)] hover:text-[var(--text)]'
+                              : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:text-white hover:border-slate-600'
                           }`}
                         >
                           {comp}
@@ -688,7 +688,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-4 rounded-2xl border border-dashed border-[var(--line)] hover:border-violet-500/50 bg-[var(--line)]/10 text-center cursor-pointer space-y-1.5 transition-all"
+                      className="p-4 rounded-2xl border border-dashed border-slate-700 hover:border-violet-500/50 bg-slate-900/40 text-center cursor-pointer space-y-1.5 transition-all"
                     >
                       <Upload className="w-5 h-5 text-violet-400 mx-auto" />
                       <div className="text-xs font-semibold text-[var(--text)]">

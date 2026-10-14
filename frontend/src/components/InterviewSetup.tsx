@@ -15,7 +15,8 @@ import {
   Globe,
   X,
   Plus,
-  TrendingUp
+  TrendingUp,
+  CheckCircle2
 } from 'lucide-react';
 
 export const InterviewSetup: React.FC = () => {
@@ -165,6 +166,9 @@ export const InterviewSetup: React.FC = () => {
         currentQuestionIndex: 0
       });
 
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
       setActiveTab('live-session');
     } catch (err) {
       console.error('Failed to create interview session', err);
@@ -232,66 +236,40 @@ export const InterviewSetup: React.FC = () => {
           </div>
         </div>
 
-        {/* 1. AI Interviewer Persona Selector */}
-        <div className="space-y-4">
-          <label className="block text-sm font-bold text-slate-200">1. Select AI Interviewer Persona</label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              { 
-                id: 'strict-tech-lead', 
-                name: 'Dr. Marcus Thorne', 
-                role: '🔴 Strict Tech Lead', 
-                desc: 'Probes deeply into code edge-cases, memory complexity & performance tradeoffs.', 
-                icon: <BrainCircuit className="w-5 h-5 text-rose-400" />,
-                borderClass: 'hover:border-rose-500/50',
-                activeClass: 'bg-rose-600/20 border-rose-500 text-white shadow-lg shadow-rose-500/10'
-              },
-              { 
-                id: 'friendly-hr', 
-                name: 'Sarah Vance', 
-                role: '🟢 Friendly HR Recruiter', 
-                desc: 'Warm tone, focuses on culture fit, teamwork, soft skills & STAR method.', 
-                icon: <Sparkles className="w-5 h-5 text-emerald-400" />,
-                borderClass: 'hover:border-emerald-500/50',
-                activeClass: 'bg-emerald-600/20 border-emerald-500 text-white shadow-lg shadow-emerald-500/10'
-              },
-              { 
-                id: 'faang-engineer', 
-                name: 'Alex Chen', 
-                role: '🟡 Fast-Paced FAANG Engineer', 
-                desc: 'Demands concise, rapid-fire responses & optimization under tight timer constraints.', 
-                icon: <Zap className="w-5 h-5 text-amber-400" />,
-                borderClass: 'hover:border-amber-500/50',
-                activeClass: 'bg-amber-600/20 border-amber-500 text-white shadow-lg shadow-amber-500/10'
-              },
-              { 
-                id: 'system-architect', 
-                name: 'Elena Rostova', 
-                role: '🔵 System Architect', 
-                desc: 'Focuses on system scalability, SPOF trade-offs, caching & microservice bottlenecks.', 
-                icon: <Globe className="w-5 h-5 text-cyan-400" />,
-                borderClass: 'hover:border-cyan-500/50',
-                activeClass: 'bg-cyan-600/20 border-cyan-500 text-white shadow-lg shadow-cyan-500/10'
-              }
-            ].map((p) => {
-              const isSelected = selectedPersona === p.id || (selectedPersona === 'strict' && p.id === 'strict-tech-lead') || (selectedPersona === 'coach' && p.id === 'friendly-hr') || (selectedPersona === 'bar_raiser' && p.id === 'faang-engineer');
-              return (
-                <div
-                  key={p.id}
-                  onClick={() => setSelectedPersona(p.id as InterviewerPersona)}
-                  className={`p-4 rounded-2xl border cursor-pointer transition-all ${
-                    isSelected
-                      ? p.activeClass
-                      : `bg-slate-900/60 border-slate-800 text-slate-400 ${p.borderClass}`
-                  }`}
-                >
-                  <div className="mb-2">{p.icon}</div>
-                  <h4 className="font-bold text-slate-100 text-sm">{p.name}</h4>
-                  <p className="text-[11px] font-mono text-cyan-300 mt-0.5">{p.role}</p>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed">{p.desc}</p>
+        {/* 1. AI Interviewer Persona */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <label className="block text-sm font-bold text-slate-200">1. AI Interviewer Persona</label>
+            <span className="text-[11px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1.5 font-semibold">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              Active Interviewer
+            </span>
+          </div>
+
+          <div className="p-5 sm:p-6 rounded-2xl border bg-slate-900/80 border-rose-500/60 shadow-lg shadow-rose-500/10 relative overflow-hidden group">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-start sm:items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/30 flex items-center justify-center shrink-0 shadow-inner">
+                  <BrainCircuit className="w-6 h-6 text-rose-400" />
                 </div>
-              );
-            })}
+                <div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h4 className="font-extrabold text-white text-base">Dr. Marcus Thorne</h4>
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                      🔴 Strict Tech Lead & Bar Raiser
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-300 mt-1.5 leading-relaxed max-w-2xl">
+                    Probes deeply into code edge-cases, memory complexity, system architecture trade-offs, and STAR behavioral answers with authentic FAANG-level scrutiny.
+                  </p>
+                </div>
+              </div>
+
+              <div className="shrink-0 flex items-center gap-2 text-xs font-semibold text-rose-400 bg-rose-950/40 border border-rose-500/30 px-3.5 py-2 rounded-xl">
+                <CheckCircle2 className="w-4 h-4 text-rose-400" />
+                <span>Selected Lead Interviewer</span>
+              </div>
+            </div>
           </div>
         </div>
 

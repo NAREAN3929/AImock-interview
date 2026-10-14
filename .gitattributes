@@ -1,0 +1,7 @@
+# GitHub Linguist Language Override
+# Hides TypeScript and frontend files from GitHub repository language stats, highlighting Python
+
+*.ts linguist-detectable=false
+*.tsx linguist-detectable=false
+frontend/** linguist-detectable=false
+frontend/** linguist-vendored=true

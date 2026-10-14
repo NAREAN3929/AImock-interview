@@ -8,31 +8,14 @@ interface AvatarProps {
 }
 
 export const InterviewerAvatar: React.FC<AvatarProps> = ({
-  status,
-  persona = 'strict'
+  status
 }) => {
-  const personaDetails = {
-    coach: {
-      name: 'Sarah Vance',
-      title: 'Encouraging Tech Coach',
-      badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
-      icon: <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-    },
-    strict: {
-      name: 'Dr. Marcus Thorne',
-      title: 'Strict Principal Architect',
-      badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/30',
-      icon: <BrainCircuit className="w-3.5 h-3.5 text-violet-400" />
-    },
-    bar_raiser: {
-      name: 'Elena Rostova',
-      title: 'FAANG Executive Bar Raiser',
-      badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
-      icon: <Zap className="w-3.5 h-3.5 text-amber-400" />
-    }
+  const currentPersona = {
+    name: 'Dr. Marcus Thorne',
+    title: 'Strict Tech Lead & Bar Raiser',
+    badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/30',
+    icon: <BrainCircuit className="w-3.5 h-3.5 text-rose-400" />
   };
-
-  const currentPersona = personaDetails[persona] || personaDetails.strict;
 
   return (
     <div className="flex flex-col items-center justify-center p-6 bg-slate-900/80 rounded-2xl border border-slate-800 relative overflow-hidden">

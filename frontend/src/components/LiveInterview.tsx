@@ -127,8 +127,12 @@ export const LiveInterview: React.FC = () => {
     return () => clearInterval(interval);
   }, [currentQIndex]);
 
-  // Synchronize question state when current question changes
+  // Synchronize question state and scroll to top when current question changes
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+
     if (currentQuestion) {
       setQuestionTimer(0);
       setShowHint(false);
@@ -385,7 +389,6 @@ export const LiveInterview: React.FC = () => {
         
         {/* Left Column: AI Interviewer Avatar & Question prompt */}
         <div className="space-y-6 relative">
-          <BodyLanguageDetector initialCameraActive={true} fillerWordCount={fillerCount} />
           <InterviewerAvatar 
             status={avatarStatus} 
             persona={activeSession.persona || 'strict'} 
@@ -421,12 +424,37 @@ export const LiveInterview: React.FC = () => {
               </div>
             )}
           </div>
+
+          <BodyLanguageDetector initialCameraActive={true} fillerWordCount={fillerCount} />
         </div>
 
         {/* Right Column: Candidate Input Panel */}
         <div className="lg:col-span-2 space-y-6">
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
             
+            {/* Prominent Active Question Banner on top of response area */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-violet-950/40 to-slate-900/60 border border-violet-500/30 flex items-start gap-3 shadow-inner">
+              <div className="p-2 rounded-xl bg-violet-600/20 text-violet-300 shrink-0 mt-0.5 border border-violet-500/30">
+                <Sparkles className="w-4 h-4 text-violet-400" />
+              </div>
+              <div className="space-y-1 min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-mono font-bold text-violet-400 uppercase tracking-wider">
+                    Active Question • {currentQuestion?.category || 'Technical Prompt'}
+                  </span>
+                  <button
+                    onClick={handleSpeechQuestionAgain}
+                    className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-violet-300 transition-colors font-medium"
+                  >
+                    <Volume2 className="w-3.5 h-3.5" /> Re-play Audio
+                  </button>
+                </div>
+                <p className="text-sm sm:text-base font-bold text-white leading-relaxed">
+                  "{currentQuestion?.question_text}"
+                </p>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div className="flex items-center gap-2">
                 <button

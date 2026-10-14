@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 export const AptitudeTrainer: React.FC = () => {
-  const { setAptitudeTestActive } = useStore();
+  const { setAptitudeTestActive, recordPracticeActivity, updateUserProfile } = useStore();
 
   // Test Config States
   const [selectedTopic, setSelectedTopic] = useState<'quantitative' | 'logical' | 'pseudocode' | 'verbal' | 'full'>('pseudocode');
@@ -257,6 +257,9 @@ export const AptitudeTrainer: React.FC = () => {
     } catch (err) {
       console.warn('Fullscreen request bypassed', err);
     }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
     setIsTestStarted(true);
     setAptitudeTestActive(true);
     setCurrentQIndex(0);
@@ -279,6 +282,9 @@ export const AptitudeTrainer: React.FC = () => {
   };
 
   const handleNext = () => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
     setSelectedOption(null);
     setSubmitted(false);
     if (currentQIndex < activeQuestionList.length - 1) {
@@ -489,6 +495,9 @@ export const AptitudeTrainer: React.FC = () => {
                     if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
                     setIsTestStarted(false);
                     setAptitudeTestActive(false);
+                    recordPracticeActivity();
+                    const calcAccuracy = Math.min(100, Math.round((score / Math.max(1, activeQuestionList.length)) * 100));
+                    updateUserProfile({ aptitudeAccuracy: calcAccuracy });
                   }
                 }}
                 className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-lg transition-transform"

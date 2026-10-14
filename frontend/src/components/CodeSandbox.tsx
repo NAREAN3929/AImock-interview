@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Play, CheckCircle2, XCircle, AlertTriangle, Code2, Terminal, Check, Layers, RotateCcw, FileCode } from 'lucide-react';
+import { useStore } from '../store/useStore';
 
 export interface TestCase {
   id: number;
@@ -74,6 +75,7 @@ export const CodeSandbox: React.FC<CodeSandboxProps> = ({
   testCases: customTestCases,
   problemTitle = 'Two Sum (LeetCode #1)'
 }) => {
+  const { recordPracticeActivity } = useStore();
   const [language, setLanguage] = useState<'javascript' | 'python' | 'cpp' | 'java'>('javascript');
   
   // Use provided initialCode or starter skeleton (NEVER the pre-completed answer)
@@ -204,6 +206,9 @@ export const CodeSandbox: React.FC<CodeSandboxProps> = ({
                 ? ['✓ All automated test cases passed! Complexity: O(N) Time, O(N) Space.']
                 : [`✗ Failed: ${passedCount}/${testSuite.length} test cases passed. Check Actual Output vs Expected Output.`]
           );
+          if (allPassed) {
+            recordPracticeActivity();
+          }
           if (onTestResult) {
             onTestResult({
               passed: allPassed,

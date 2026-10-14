@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { NavTab, UserProfile, InterviewSession, EvaluationResult, PastInterviewItem, StudyPlan, StudyPlanTask } from '../types';
+import { calculateRealStreak, getSeedPracticeDates, formatYMD } from '../utils/streakHelper';
 
 interface AppState {
   activeTab: NavTab;
@@ -17,6 +18,7 @@ interface AppState {
   // User Profile
   userProfile: UserProfile;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
+  recordPracticeActivity: (customDate?: string) => void;
   decrementSessionQuota: () => void;
   resetPlanToFreeStarter: () => void;
   
@@ -114,6 +116,31 @@ export const useStore = create<AppState>()(
           }
         }
 
+        // Ensure practiceDates are populated and streak is dynamically synchronized with calendar
+        const currentPracticeDates = state.userProfile?.practiceDates;
+        if (!currentPracticeDates || currentPracticeDates.length === 0) {
+          const seeded = getSeedPracticeDates();
+          const streakRes = calculateRealStreak(seeded, state.pastInterviews);
+          set((prev) => ({
+            userProfile: {
+              ...prev.userProfile,
+              practiceDates: seeded,
+              streakDays: streakRes.streakDays
+            }
+          }));
+        } else {
+          // Re-calculate streak against current real calendar date
+          const streakRes = calculateRealStreak(currentPracticeDates, state.pastInterviews);
+          if (state.userProfile.streakDays !== streakRes.streakDays) {
+            set((prev) => ({
+              userProfile: {
+                ...prev.userProfile,
+                streakDays: streakRes.streakDays
+              }
+            }));
+          }
+        }
+
         if (!state.isAuthenticated || !state.lastLoginTimestamp) {
           return false;
         }
@@ -142,10 +169,36 @@ export const useStore = create<AppState>()(
         xpPoints: 480,
         planTier: 'FREE STARTER',
         sessionsLeft: 10,
-        monthlyQuota: 10
+        monthlyQuota: 10,
+        practiceDates: getSeedPracticeDates()
       },
       updateUserProfile: (updates) =>
         set((state) => ({ userProfile: { ...state.userProfile, ...updates } })),
+
+      recordPracticeActivity: (customDate?: string) =>
+        set((state) => {
+          const dateStr = customDate || formatYMD(new Date());
+          const existingDates = state.userProfile?.practiceDates && state.userProfile.practiceDates.length > 0
+            ? state.userProfile.practiceDates
+            : getSeedPracticeDates();
+
+          const alreadyPracticed = existingDates.includes(dateStr);
+          const updatedDates = alreadyPracticed
+            ? existingDates
+            : [...existingDates, dateStr];
+
+          const streakRes = calculateRealStreak(updatedDates, state.pastInterviews);
+
+          return {
+            userProfile: {
+              ...state.userProfile,
+              practiceDates: updatedDates,
+              lastPracticeDate: dateStr,
+              streakDays: streakRes.streakDays,
+              xpPoints: (state.userProfile?.xpPoints || 0) + (alreadyPracticed ? 0 : 50)
+            }
+          };
+        }),
 
       decrementSessionQuota: () =>
         set((state) => {
@@ -288,7 +341,29 @@ export const useStore = create<AppState>()(
       ],
       setPastInterviews: (interviews) => set({ pastInterviews: interviews }),
       addPastInterview: (item) =>
-        set((state) => ({ pastInterviews: [item, ...state.pastInterviews] })),
+        set((state) => {
+          const itemDate = item.created_at ? item.created_at.split('T')[0] : formatYMD(new Date());
+          const existingDates = state.userProfile?.practiceDates && state.userProfile.practiceDates.length > 0
+            ? state.userProfile.practiceDates
+            : getSeedPracticeDates();
+          const updatedDates = existingDates.includes(itemDate)
+            ? existingDates
+            : [...existingDates, itemDate];
+          const newPast = [item, ...state.pastInterviews];
+          const streakRes = calculateRealStreak(updatedDates, newPast);
+
+          return {
+            pastInterviews: newPast,
+            userProfile: {
+              ...state.userProfile,
+              practiceDates: updatedDates,
+              lastPracticeDate: itemDate,
+              streakDays: streakRes.streakDays,
+              totalInterviews: (state.userProfile?.totalInterviews || 0) + 1,
+              xpPoints: (state.userProfile?.xpPoints || 0) + 100
+            }
+          };
+        }),
 
       // Study Plan state
       studyPlan: null,
@@ -296,16 +371,38 @@ export const useStore = create<AppState>()(
       updateStudyPlanTaskStatus: (taskId, status) =>
         set((state) => {
           if (!state.studyPlan) return state;
+          const nowIso = new Date().toISOString();
+          const todayStr = formatYMD(new Date());
           const updatedTasks = state.studyPlan.tasks.map((t) =>
             t.id === taskId
-              ? { ...t, status, completed_at: status === 'done' ? new Date().toISOString() : undefined }
+              ? { ...t, status, completed_at: status === 'done' ? nowIso : undefined }
               : t
           );
+
+          let updatedProfile = state.userProfile;
+          if (status === 'done') {
+            const existingDates = state.userProfile?.practiceDates && state.userProfile.practiceDates.length > 0
+              ? state.userProfile.practiceDates
+              : getSeedPracticeDates();
+            const updatedDates = existingDates.includes(todayStr)
+              ? existingDates
+              : [...existingDates, todayStr];
+            const streakRes = calculateRealStreak(updatedDates, state.pastInterviews);
+            updatedProfile = {
+              ...state.userProfile,
+              practiceDates: updatedDates,
+              lastPracticeDate: todayStr,
+              streakDays: streakRes.streakDays,
+              xpPoints: (state.userProfile?.xpPoints || 0) + 50
+            };
+          }
+
           return {
             studyPlan: {
               ...state.studyPlan,
               tasks: updatedTasks
-            }
+            },
+            userProfile: updatedProfile
           };
         }),
 

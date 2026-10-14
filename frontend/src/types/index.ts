@@ -66,6 +66,8 @@ export interface UserProfile {
   targetCompany?: string;
   resumeUrl?: string;
   aptitudeAccuracy?: number;
+  practiceDates?: string[];
+  lastPracticeDate?: string;
 }
 
 export interface StudyPlanTask {

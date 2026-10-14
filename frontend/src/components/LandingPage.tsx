@@ -217,9 +217,9 @@ export const LandingPage: React.FC = () => {
             <div className="w-12 h-12 rounded-xl bg-violet-600/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
               <BrainCircuit className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-bold text-white">AI Interviewer Personas</h3>
+            <h3 className="text-lg font-bold text-white">AI Lead Interviewer</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Choose between Sarah Vance (Encouraging Coach), Dr. Marcus Thorne (Strict Tech Lead), or Elena Rostova (FAANG Bar Raiser) for real-time practice.
+              Practice directly with Dr. Marcus Thorne (Strict Tech Lead & Bar Raiser) for authentic FAANG-level scrutiny and real-time evaluation.
             </p>
           </div>
 

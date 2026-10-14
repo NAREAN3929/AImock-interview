@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const CommunicationTrainer: React.FC = () => {
+  const { recordPracticeActivity } = useStore();
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [timer, setTimer] = useState(0);
@@ -49,6 +50,9 @@ export const CommunicationTrainer: React.FC = () => {
 
     if (isRecording) {
       recognizerRef.current.stop();
+      if (wordCount >= 5) {
+        recordPracticeActivity();
+      }
     } else {
       setTranscript('');
       setTimer(0);

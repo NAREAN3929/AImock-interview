@@ -1,9 +1,11 @@
 # 🚀 AI Mock Interview Platform ("InterviewAI Prime")
 
-A complete, production-ready, full-stack AI Mock Interview Platform built with HTML5, Tailwind CSS, FastAPI, MySQL, and Google Gemini API.
+A complete, production-ready, full-stack AI Mock Interview Platform built with Python (FastAPI), Google Gemini AI, MySQL, and Web Standards.
 
-![Platform Screenshot](https://img.shields.io/badge/AI-Mock%20Interview-8b5cf6?style=for-the-badge)
-![Tech Stack](https://img.shields.io/badge/Stack-HTML5%20%7C%20FastAPI%20%7C%20MySQL%20%7C%20Gemini-06b6d4?style=for-the-badge)
+![Primary Language](https://img.shields.io/badge/Language-Python%203.11-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![AI Engine](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?style=for-the-badge&logo=google&logoColor=white)
+![Backend Framework](https://img.shields.io/badge/Framework-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![Database](https://img.shields.io/badge/Database-MySQL%208.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 
 ---
 
@@ -81,6 +83,11 @@ DATABASE_URL=mysql+pymysql://root:rootpassword@localhost:3306/ai_mock_interview
 GEMINI_API_KEY=your_gemini_api_key_here
 SECRET_KEY=your_super_secret_jwt_key
 ```
+
+---
+
+## 🛠️ GitHub Repository Language Configuration
+To highlight the core Python & FastAPI AI engine as the primary repository language on GitHub, frontend assets are configured with `linguist-detectable=false` in `.gitattributes`.
 
 ---
 

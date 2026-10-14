@@ -11,9 +11,12 @@ from app.core.config import settings
 logger = logging.getLogger("gemini_service")
 
 ACTIVE_MODELS = [
-    "gemini-3.1-flash-lite",
+    "gemini-flash-lite-latest",
+    "gemini-3.5-flash-lite",
     "gemini-3.8-flash",
-    "gemini-3.5-flash",
+    "gemini-flash-latest",
+    "gemini-3.7-flash",
+    "gemini-3.1-flash-lite",
     "gemini-3-flash-preview"
 ]
 
@@ -23,7 +26,7 @@ class GeminiService:
         self._current_key = None
         self._session = requests.Session()
         self._throttled_models: Dict[str, float] = {}
-        self._active_model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+        self._active_model_name = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
         self._init_client()
 
     def _init_client(self):
@@ -31,7 +34,7 @@ class GeminiService:
         if api_key:
             api_key = api_key.strip()
             self._current_key = api_key
-            model_name = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite").strip()
+            model_name = os.getenv("GEMINI_MODEL", "gemini-flash-lite-latest").strip()
             self._active_model_name = model_name
 
             # Also initialize generativeai SDK if available

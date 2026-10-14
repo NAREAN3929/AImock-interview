@@ -5,7 +5,7 @@ import { CodeSandbox } from './CodeSandbox';
 import { TestInstructionModal } from './TestInstructionModal';
 
 export const CompanyOASimulator: React.FC = () => {
-  const { setAptitudeTestActive } = useStore();
+  const { setAptitudeTestActive, recordPracticeActivity } = useStore();
   const [selectedDrive, setSelectedDrive] = useState<'tcs' | 'infosys' | 'zoho' | 'amazon'>('tcs');
   const [isTestStarted, setIsTestStarted] = useState(false);
   const [showInstructionModal, setShowInstructionModal] = useState(false);
@@ -150,6 +150,9 @@ function minCostToConnectRopes(ropes) {
     } catch (err) {
       console.warn('Fullscreen bypassed', err);
     }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
     setIsTestStarted(true);
     setAptitudeTestActive(true);
     setCurrentRoundIdx(0);
@@ -284,6 +287,7 @@ function minCostToConnectRopes(ropes) {
                       setCurrentRoundIdx(c => c + 1);
                     } else {
                       setTestFinished(true);
+                      recordPracticeActivity();
                     }
                   }}
                   className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs shadow-lg transition-transform flex items-center gap-2"

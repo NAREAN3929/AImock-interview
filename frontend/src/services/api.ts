@@ -436,25 +436,106 @@ export const saveOnboardingStepApi = async (data: any, userEmail?: string): Prom
   }, { status: 'saved' });
 };
 
+const generateFallbackStudyPlan = (payload: any) => {
+  const role = payload?.target_role || 'Frontend developer';
+  const company = payload?.target_company ? ` (${payload.target_company})` : '';
+  const isCompressed = payload?.interview_date_preset === 'within_7_days';
+
+  let tasks = [];
+  if (isCompressed) {
+    tasks = [
+      { id: 1, week_number: 1, day_number: 1, title: `[${role}] Day 1: Role Core Fundamentals & Syntax Drills`, session_type: 'fundamentals', sessions_count: 1, status: 'pending' },
+      { id: 2, week_number: 1, day_number: 2, title: `[${role}] Day 2: Essential Data Structures & Logic`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 3, week_number: 1, day_number: 3, title: `[${role}] Day 3: Core Algorithms & Problem Solving`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 4, week_number: 1, day_number: 4, title: `[${role}] Day 4: Framework Essentials & Component Lifecycles`, session_type: 'fundamentals', sessions_count: 1, status: 'pending' },
+      { id: 5, week_number: 1, day_number: 5, title: `[${role}] Day 5: STAR Behavioral Stories & Culture Alignment`, session_type: 'star_behavioral', sessions_count: 1, status: 'pending' },
+      { id: 6, week_number: 1, day_number: 6, title: `[${role}] Day 6: Speed Coding & Edge Case Practice`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 7, week_number: 1, day_number: 7, title: `[${role}] Day 7: Full-Length AI Mock Interview${company}`, session_type: 'mock_interview', sessions_count: 1, status: 'pending' },
+    ];
+  } else {
+    tasks = [
+      { id: 1, week_number: 1, day_number: 1, title: `[${role}] Week 1: Core Fundamentals & Language Syntax Drills`, session_type: 'fundamentals', sessions_count: 1, status: 'pending' },
+      { id: 2, week_number: 1, day_number: 2, title: `[${role}] Week 1: Data Structures (Arrays, Strings & Objects)`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 3, week_number: 1, day_number: 3, title: `[${role}] Week 1: Intermediate DSA & Problem Solving Drills`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 4, week_number: 1, day_number: 4, title: `[${role}] Week 1: STAR Behavioral & Experience Deep-Dive`, session_type: 'star_behavioral', sessions_count: 1, status: 'pending' },
+      { id: 5, week_number: 2, day_number: 1, title: `[${role}] Week 2: Scalability, API Design & Architecture`, session_type: 'system_design', sessions_count: 1, status: 'pending' },
+      { id: 6, week_number: 2, day_number: 2, title: `[${role}] Week 2: Advanced Coding Patterns & Edge Cases`, session_type: 'dsa', sessions_count: 1, status: 'pending' },
+      { id: 7, week_number: 2, day_number: 3, title: `[${role}] Week 2: High-Pressure STAR Scenarios & Leadership`, session_type: 'star_behavioral', sessions_count: 1, status: 'pending' },
+      { id: 8, week_number: 2, day_number: 4, title: `[${role}] Week 2: Final Full-Length Simulated Technical Mock${company}`, session_type: 'mock_interview', sessions_count: 1, status: 'pending' },
+    ];
+  }
+
+  const plan = {
+    role,
+    experience_level: payload?.experience_level || 'Fresher',
+    weeks_count: isCompressed ? 1 : 2,
+    days_until_interview: isCompressed ? 7 : 14,
+    interview_date: payload?.interview_date || null,
+    total_sessions: tasks.length,
+    remaining_monthly_sessions: 10,
+    tasks
+  };
+
+  try {
+    localStorage.setItem('interview_ai_study_plan', JSON.stringify(plan));
+  } catch (e) {}
+
+  return plan;
+};
+
 export const completeOnboardingApi = async (data: any, userEmail?: string): Promise<any> => {
   const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : '';
-  return await safeApiCall(async () => {
+  const plan = await safeApiCall(async () => {
     return await postJSON(`/onboarding/complete${query}`, data);
   }, null);
+
+  if (plan && plan.tasks) {
+    try {
+      localStorage.setItem('interview_ai_study_plan', JSON.stringify(plan));
+    } catch (e) {}
+    return plan;
+  }
+
+  // Gracefully use local plan generator so the candidate is never blocked
+  return generateFallbackStudyPlan(data);
 };
 
 export const skipOnboardingApi = async (userEmail?: string): Promise<any> => {
   const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : '';
-  return await safeApiCall(async () => {
+  const plan = await safeApiCall(async () => {
     return await postJSON(`/onboarding/skip${query}`, {});
   }, null);
+
+  if (plan && plan.tasks) {
+    try {
+      localStorage.setItem('interview_ai_study_plan', JSON.stringify(plan));
+    } catch (e) {}
+    return plan;
+  }
+
+  return generateFallbackStudyPlan({
+    target_role: 'Frontend developer',
+    experience_level: 'Fresher',
+    interview_date_preset: 'within_14_days'
+  });
 };
 
 export const getUserStudyPlanApi = async (userEmail?: string): Promise<any> => {
   const query = userEmail ? `?user_email=${encodeURIComponent(userEmail)}` : '';
-  return await safeApiCall(async () => {
+  const plan = await safeApiCall(async () => {
     return await getJSON(`/onboarding/study-plan${query}`);
   }, null);
+
+  if (plan && plan.tasks) {
+    return plan;
+  }
+
+  try {
+    const cached = localStorage.getItem('interview_ai_study_plan');
+    return cached ? JSON.parse(cached) : null;
+  } catch {
+    return null;
+  }
 };
 
 export const updateStudyPlanTaskStatusApi = async (taskId: number, status: 'pending' | 'done', userEmail?: string): Promise<any> => {

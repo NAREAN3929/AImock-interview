@@ -86,8 +86,12 @@ export const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashSync);
   }, [setActiveTab]);
 
-  // Update hash when activeTab changes
+  // Update hash and reset scroll position when activeTab changes
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+
     if (TAB_TO_HASH[activeTab]) {
       const targetHash = `#/${TAB_TO_HASH[activeTab]}`;
       if (window.location.hash !== targetHash) {

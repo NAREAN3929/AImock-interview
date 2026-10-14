@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { CertificateModal } from './CertificateModal';
 import { getUserRoadmapApi, getUserStudyPlanApi, updateStudyPlanTaskStatusApi } from '../services/api';
 import { CareerRoadmap } from '../types';
 import { ErrorBoundary } from './ErrorBoundary';
+import { calculateRealStreak } from '../utils/streakHelper';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -57,7 +58,8 @@ export const Dashboard: React.FC = () => {
     studyPlan, 
     setStudyPlan, 
     updateStudyPlanTaskStatus, 
-    setOnboardingModalOpen 
+    setOnboardingModalOpen,
+    recordPracticeActivity
   } = useStore();
   const [showCertModal, setShowCertModal] = useState(false);
   const [competencyGraphType, setCompetencyGraphType] = useState<'comparison' | 'radial'>('comparison');
@@ -121,10 +123,15 @@ export const Dashboard: React.FC = () => {
   // Find next pending task for dynamic "Focus next" recommendations
   const nextPendingTask = studyPlan?.tasks?.find(t => t.status === 'pending');
 
+  // Calculate real dynamic streak from candidate's recorded practice dates and past interview timestamps
+  const streakData = useMemo(() => {
+    return calculateRealStreak(userProfile.practiceDates, pastInterviews);
+  }, [userProfile.practiceDates, pastInterviews]);
+
   // Calculate real metrics from application data
   const readiness = Number(userProfile.readinessScore) || 75;
   const sessionsCount = pastInterviews.length > 0 ? pastInterviews.length : (userProfile.totalInterviews || 1);
-  const streak = Number(userProfile.streakDays) || 12;
+  const streak = streakData.streakDays;
   const xp = Number(userProfile.xpPoints) || 0;
 
   // Average performance across completed interviews or fallback to 89% (from screenshot)
@@ -132,8 +139,8 @@ export const Dashboard: React.FC = () => {
     ? Math.round(pastInterviews.reduce((acc, curr) => acc + (Number(curr.overall_score) || 0), 0) / pastInterviews.length)
     : (readiness >= 85 ? 89 : Math.round(readiness));
 
-  // Aptitude accuracy from userProfile or fallback to 0% (from screenshot)
-  const aptitudeAccuracy = userProfile.aptitudeAccuracy !== undefined ? userProfile.aptitudeAccuracy : 0;
+  // Aptitude accuracy from userProfile clamped between 0 and 100%
+  const aptitudeAccuracy = userProfile.aptitudeAccuracy !== undefined ? Math.min(100, Math.max(0, userProfile.aptitudeAccuracy)) : 0;
 
   // Roadmap completion percentage
   const roadmapPercent = roadmap ? Math.round(roadmap.overall_progress) : 100;
@@ -358,11 +365,18 @@ export const Dashboard: React.FC = () => {
         {/* Card 2: Practice Streak */}
         <div className="p-5 sm:p-6 rounded-2xl bg-[#090d18]/90 border border-slate-800/80 hover:border-amber-500/50 transition-all flex flex-col justify-between space-y-6 shadow-xl relative overflow-hidden group">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-semibold text-slate-300 tracking-wide">
-              Practice Streak
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-semibold text-slate-300 tracking-wide">
+                Practice Streak
+              </span>
+              {streakData.practicedToday && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/15 border border-amber-500/30 text-amber-300">
+                  ACTIVE TODAY
+                </span>
+              )}
+            </div>
             <div className="w-10 h-10 rounded-xl bg-amber-950/70 border border-amber-500/30 text-amber-400 flex items-center justify-center group-hover:scale-105 transition-transform shadow-inner">
-              <Flame className="w-5 h-5 text-amber-400 fill-amber-400" />
+              <Flame className={`w-5 h-5 text-amber-400 fill-amber-400 ${streak > 0 ? 'animate-pulse' : ''}`} />
             </div>
           </div>
 
@@ -375,16 +389,55 @@ export const Dashboard: React.FC = () => {
                 Days Consecutive
               </span>
             </div>
+
+            {/* Dynamic streak status subtitle */}
+            <div className="mt-2 text-xs flex items-center gap-2">
+              {streakData.practicedToday ? (
+                <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Practiced today! Streak is secured.
+                </span>
+              ) : streak > 0 ? (
+                <span className="text-amber-400/90 font-medium flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                  Practice today to reach {streak + 1} days!
+                </span>
+              ) : (
+                <span className="text-slate-400">
+                  Complete any drill today to start your streak!
+                </span>
+              )}
+            </div>
           </div>
 
-          {/* 7-Day Day tracker row with glowing amber dots matching design */}
+          {/* 7-Day Day tracker row with dynamic real day states matching calendar week */}
           <div className="pt-3 border-t border-slate-800/80 grid grid-cols-7 gap-1">
-            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-              <div key={day} className="flex flex-col items-center gap-1.5">
-                <span className="text-[11px] font-mono text-slate-400">
-                  {day}
+            {streakData.weekDays.map((d) => (
+              <div 
+                key={d.day} 
+                className="flex flex-col items-center gap-1.5 group/day relative"
+                title={`${d.day} (${d.date}): ${d.isPracticed ? 'Practiced ✓' : d.isToday ? 'Today (Pending Practice)' : d.isPast ? 'Missed' : 'Upcoming'}`}
+              >
+                <span className={`text-[11px] font-mono transition-colors ${
+                  d.isToday 
+                    ? 'text-amber-300 font-bold underline decoration-amber-400 decoration-2 underline-offset-4' 
+                    : d.isPracticed 
+                      ? 'text-amber-400/90 font-semibold' 
+                      : d.isPast 
+                        ? 'text-slate-500' 
+                        : 'text-slate-600'
+                }`}>
+                  {d.day}
                 </span>
-                <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/90" />
+                {d.isPracticed ? (
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/90 ring-2 ring-amber-400/30 transition-transform group-hover/day:scale-125" />
+                ) : d.isToday ? (
+                  <span className="w-2.5 h-2.5 rounded-full border-2 border-dashed border-amber-400/80 bg-amber-400/10 animate-pulse transition-transform group-hover/day:scale-125" />
+                ) : d.isPast ? (
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-800 border border-slate-700/60" />
+                ) : (
+                  <span className="w-2.5 h-2.5 rounded-full bg-slate-900/60 border border-slate-800/40" />
+                )}
               </div>
             ))}
           </div>
